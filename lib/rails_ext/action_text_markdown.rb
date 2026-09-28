@@ -1,5 +1,12 @@
 module ActionText
   class Markdown < Record
+    # The signed id that authorizes an upload is rendered into the page editor. Binding
+    # it to a purpose keeps it from being used anywhere else a signed global id is
+    # accepted, and expiring it bounds how long a copy taken off the page stays good.
+    # Neither replaces the authorization check in the uploads controller.
+    UPLOADS_SIGNED_ID_PURPOSE = :markdown_uploads
+    UPLOADS_SIGNED_ID_EXPIRY = 1.day
+
     DEFAULT_RENDERER_OPTIONS = {
       filter_html: false
     }
@@ -29,7 +36,7 @@ module ActionText::Markdown::Uploads
   extend ActiveSupport::Concern
 
   included do
-    has_many_attached :uploads, dependent: :destroy
+    has_many_attached :uploads
   end
 end
 

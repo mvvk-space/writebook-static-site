@@ -41,6 +41,21 @@ class Books::SearchesControllerTest < ActionDispatch::IntegrationTest
     assert_select "p", text: /no matches/i
   end
 
+  test "create shows no matches when the search uses FTS5 operator syntax" do
+    [ "OR", "AND", "NOT", "great OR", "NEAR handbook", "great AND NOT" ].each do |query|
+      post book_search_path(books(:handbook)), params: { search: query }
+
+      assert_response :success, "expected #{query.inspect} to render without error"
+    end
+  end
+
+  test "create still finds matches for an ordinary multi-word query" do
+    post book_search_path(books(:handbook)), params: { search: "great handbook" }
+
+    assert_response :success
+    assert_select "a.search__result"
+  end
+
   test "create does not find trashed pages" do
     leaves(:summary_page).trashed!
 
@@ -85,7 +100,7 @@ class Books::SearchesControllerTest < ActionDispatch::IntegrationTest
         assert_pattern {
           result => {
             elements: [
-              { name: "strong", elements: [{ name: "mark", content: "findme" }] },
+              { name: "strong", elements: [ { name: "mark", content: "findme" } ] },
               { name: "mark", content: "findme" }
             ]
           }
@@ -95,7 +110,7 @@ class Books::SearchesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "search results strip dangerous tags from page body" do
-    pages(:welcome).update! body: 'findme <b>bold</b>'
+    pages(:welcome).update! body: "findme <b>bold</b>"
     leaves(:welcome_page).reindex
 
     post book_search_url(books(:handbook)), params: { search: "findme" }
@@ -117,7 +132,7 @@ class Books::SearchesControllerTest < ActionDispatch::IntegrationTest
 
   test "search results strip dangerous tags from page title" do
     leaf = leaves(:welcome_page)
-    leaf.update! title: 'findme <b>bold</b>'
+    leaf.update! title: "findme <b>bold</b>"
     leaf.reindex
 
     post book_search_url(books(:handbook)), params: { search: "findme" }
@@ -128,7 +143,7 @@ class Books::SearchesControllerTest < ActionDispatch::IntegrationTest
         assert_pattern {
           result => {
             elements: [
-              { name: "strong", elements: [{ name: "mark", content: "findme" }], content: "findme bold:" }
+              { name: "strong", elements: [ { name: "mark", content: "findme" } ], content: "findme bold:" }
             ]
           }
         }

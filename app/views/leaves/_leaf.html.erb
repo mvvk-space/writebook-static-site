@@ -1,4 +1,4 @@
-<% cache [ leaf, leaf.book, leaf.book.editable? ] do %>
+<% cache [ leaf, leaf.book, leaf.book.editable?, HtmlScrubber.cache_version ] do %>
   <%= leaf_item_tag(leaf) do %>
     <span class="btn btn--link arrangement__handle txt-small">
       <%= image_tag "handle.svg", aria: { hidden: true }, size: 24 %>
@@ -27,7 +27,7 @@
       <%= sanitize_content leaf.page.html_preview if leaf.page? %>
 
       <% if leaf.picture? %>
-        <%= image_tag leaf.leafable.image.attached? ? leaf.leafable.image.variant(:large) : "default-picture.webp" %>
+        <%= image_tag leaf.leafable.image.attached? ? leaf.leafable.large_image : "default-picture.webp" %>
       <% end %>
     </div>
 

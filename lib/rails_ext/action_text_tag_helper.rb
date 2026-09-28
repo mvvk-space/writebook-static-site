@@ -6,9 +6,16 @@ module ActionText
 
       data = options.delete(:data) || {}
       data.reverse_merge! \
-        uploads_url: action_text_markdown_uploads_url(record_gid: record.to_signed_global_id.to_s, attribute_name: name, format: "json")
+        uploads_url: action_text_markdown_uploads_url(record_gid: uploads_signed_id_for(record), attribute_name: name, format: "json")
 
       tag.house_md value, name: field_name, data: data, **options
+    end
+
+    def uploads_signed_id_for(record)
+      record.to_signed_global_id(
+        expires_in: ActionText::Markdown::UPLOADS_SIGNED_ID_EXPIRY,
+        for: ActionText::Markdown::UPLOADS_SIGNED_ID_PURPOSE
+      ).to_s
     end
 
     def house_toolbar(**options, &block)

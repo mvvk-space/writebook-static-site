@@ -30,6 +30,44 @@ class LeafablesControllerTest < ActionDispatch::IntegrationTest
     assert_select "mark", "great"
   end
 
+  test "show does not raise when the search query sanitizes to empty" do
+    sign_out
+    books(:handbook).update!(published: true)
+    Leaf.reindex_all
+
+    [ "^$", "!!!", "🙂", "\"" ].each do |query|
+      get leafable_slug_path(leaves(:welcome_page)), params: { search: query }
+
+      assert_response :success, "expected #{query.inspect} to render without error"
+      assert_in_body "a great handbook."
+    end
+  end
+
+  test "show does not raise when the search query uses FTS5 operator syntax" do
+    sign_out
+    books(:handbook).update!(published: true)
+    Leaf.reindex_all
+
+    [ "OR", "AND", "NOT", "great OR", "NEAR handbook", "great AND NOT" ].each do |query|
+      get leafable_slug_path(leaves(:welcome_page)), params: { search: query }
+
+      assert_response :success, "expected #{query.inspect} to render without error"
+    end
+  end
+
+  test "show does not raise when a phrase match spans regex metacharacters" do
+    sign_out
+    books(:handbook).update!(published: true)
+
+    sections(:welcome).update!(body: "alpha(beta gamma in the body")
+    leaves(:welcome_section).reindex
+
+    get leafable_slug_path(leaves(:welcome_section)), params: { search: "alpha_beta" }
+
+    assert_response :success
+    assert_select "mark", text: /alpha\(beta/
+  end
+
   test "show does not allow public access to an unpublished book" do
     sign_out
 
@@ -74,6 +112,16 @@ class LeafablesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_in_body "A beautiful picture"
     assert_in_body "title: \"Reading\""
+  end
+
+  test "show a picture whose image cannot be resized" do
+    leaves(:reading_picture).leafable.image.attach io: file_fixture("pixel.bmp").open,
+      filename: "pixel.bmp", content_type: "image/bmp"
+
+    get leafable_slug_path(leaves(:reading_picture))
+
+    assert_response :success
+    assert_select "figure img[src*=\"pixel.bmp\"]"
   end
 
   test "show with markdown format does not escape HTML entities" do
