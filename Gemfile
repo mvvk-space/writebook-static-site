@@ -31,6 +31,7 @@ gem "rqrcode"
 gem "thruster"
 gem "useragent", github: "basecamp/useragent"
 gem "front_matter_parser"
+gem "rubyzip", "~> 3.0"
 
 group :development, :test do
   gem "debug"

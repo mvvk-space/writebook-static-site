@@ -19,10 +19,11 @@
   <h1 class="txt-large--responsive">Export to a static site</h1>
 
   <p class="txt-medium--responsive">
-    Generate a self-contained HTML version of your library — the menu of books,
-    every book's table of contents, and every page — with all CSS, JavaScript, and
-    image files copied in. No Rails process, login, or editing machinery: the result
-    can be hosted anywhere.
+    Generate a portable version of your library with all content copied in. Choose
+    the full HTML site — the menu of books, every table of contents, and every page,
+    with CSS, JavaScript, and images included, hostable anywhere with no Rails
+    process — or a markdown-only export: each book as its own flat directory of
+    plain-text .md files, images included, downloaded as one .zip per book.
   </p>
 
   <%= form_with url: static_export_path, method: :post, class: "flex flex-column align-center gap" do %>
@@ -31,6 +32,18 @@
       <%= select_tag :book_id,
             options_for_select([["All published books", ""]] + @books.map { |book| [book.title, book.id] }) %>
     </label>
+
+    <fieldset class="flex flex-column gap txt-medium--responsive">
+      <legend class="for-screen-reader">Export format</legend>
+      <label class="flex align-center gap">
+        <%= radio_button_tag :export_format, "html", true %>
+        HTML site (CSS, JS, and images included)
+      </label>
+      <label class="flex align-center gap">
+        <%= radio_button_tag :export_format, "markdown", false %>
+        Markdown only (one flat directory per book, images included)
+      </label>
+    </fieldset>
 
     <label class="flex align-center gap txt-medium--responsive">
       <%= check_box_tag :include_drafts, "1", false %>
@@ -54,7 +67,7 @@
   </p>
   <p class="margin-block-none">
     For a very large library, generating from the browser may time out; in that case
-    run <code>bin/rails static:generate</code> (or <code>STATIC_ALL=1</code>) from the
-    server shell.
+    run <code>bin/rails static:generate</code> (or <code>STATIC_ALL=1</code>, or
+    <code>static:markdown</code> for the markdown export) from the server shell.
   </p>
 </div>

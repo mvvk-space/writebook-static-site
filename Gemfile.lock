@@ -402,6 +402,7 @@ DEPENDENCIES
   rouge (~> 4.5)
   rqrcode
   rubocop-rails-omakase
+  rubyzip (~> 3.0)
   selenium-webdriver
   sqlite3 (~> 2.9)
   stimulus-rails

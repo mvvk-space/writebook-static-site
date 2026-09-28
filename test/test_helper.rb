@@ -2,6 +2,15 @@ ENV["RAILS_ENV"] ||= "test"
 require_relative "../config/environment"
 require "rails/test_help"
 
+# The static exporter writes to a real directory on disk. Parallel workers are
+# separate processes sharing tmp/, so one worker's export or teardown would
+# clobber another's mid-test. Give every worker its own export root; the hook
+# only runs when parallel tests actually fork, so single-process runs keep the
+# default tmp/static-site (see StaticExportsController#static_dir).
+ActiveSupport::TestCase.parallelize_setup do |worker|
+  Rails.application.config.x.static_export_root = Rails.root.join("tmp/static-site-test-#{worker}")
+end
+
 module ActiveSupport
   class TestCase
     # Run tests in parallel with specified workers

@@ -150,4 +150,116 @@ class Writebook::StaticExporterTest < ActiveSupport::TestCase
     assert File.exist?(@dir.join(href.delete_prefix("/"))),
       "the declared markdown alternate #{href} should resolve to a static file"
   end
+
+  test "markdown export writes one flat directory per book" do
+    book = books(:handbook)
+    result = Writebook::StaticExporter.new(@dir, host: "example.com", format: "markdown").call
+
+    # Each book gets its own directory. Everything sits flat inside it: the
+    # whole book's front-matter .md, one front-matter .md per leaf, and a
+    # generated index.md linking them all.
+    dir = @dir.join(book.slug)
+    assert File.exist?(dir.join("index.md")), "expected a per-book index.md"
+
+    book_md = dir.join("#{book.slug}.md")
+    assert File.exist?(book_md), "expected book markdown #{book_md}"
+    assert_match(/\A---/, book_md.read, "book markdown should start with front matter")
+    assert_match(/^title:/, book_md.read, "book markdown should carry a front-matter title")
+    assert_includes book_md.read, "This is _such_ a great handbook", "book markdown should include the page body"
+
+    book.leaves.active.with_leafables.positioned.each_with_index do |leaf, index|
+      leaf_md = dir.join("#{index + 1}-#{leaf.slug}.md")
+      assert File.exist?(leaf_md), "expected leaf markdown #{leaf_md}"
+      assert_match(/^url:/, leaf_md.read, "leaf markdown should carry a front-matter url")
+    end
+
+    # The per-book index links every file in the directory.
+    book_index = dir.join("index.md").read
+    assert_includes book_index, "[The whole book as one file](#{book.slug}.md)"
+    book.leaves.active.with_leafables.positioned.each_with_index do |leaf, index|
+      assert_includes book_index, "[#{leaf.title}](#{index + 1}-#{leaf.slug}.md)"
+    end
+
+    # The top-level index.md links each book's directory.
+    assert_includes @dir.join("index.md").read, "[#{book.title}](#{book.slug}/index.md)"
+
+    # The exporter records book id => directory name so the per-book download
+    # zips scope the right directory even when the name is deduped.
+    assert_equal({ book.id.to_s => book.slug }, JSON.parse(@dir.join("_book_dirs.json").read))
+    assert_equal [ book.id ], result.exported_books
+
+    # Counts: leaves only (books are counted separately).
+    assert_equal 1, result.books
+    assert_equal book.leaves.active.count, result.leaves
+    assert_equal "markdown", result.format
+  end
+
+  test "markdown export numbers leaves in reading order, so same-titled leaves never collide" do
+    book = books(:handbook)
+    # Two leaves in one book can parameterize to the same slug; so can two books.
+    book.press Page.new(body: "Another summary."), title: "Summary"
+    other = Book.create!(title: "Handbook", published: true)
+
+    Writebook::StaticExporter.new(@dir, host: "example.com", format: "markdown").call
+
+    # Every leaf .md is numbered by its position in the book, so the flat
+    # directory lists in reading order and both Summary leaves coexist.
+    dir = @dir.join(book.slug)
+    assert File.exist?(dir.join("3-summary.md")), "expected the original summary at its position"
+    assert File.exist?(dir.join("5-summary.md")), "expected the second summary at its own position"
+    assert File.exist?(dir.join("1-the-welcome-section.md")), "expected the first leaf numbered 1"
+
+    # The two same-titled books still claim distinct directories, and the map
+    # records which directory belongs to which book id.
+    map = JSON.parse(@dir.join("_book_dirs.json").read)
+    assert_equal %w[ handbook handbook-2 ], map.values.sort
+  end
+
+  test "markdown export copies in-body upload images and rewrites their links" do
+    book = books(:handbook)
+    markdown = pages(:welcome).body
+    markdown.uploads.attach io: Rails.root.join("test/fixtures/files/reading.webp").open,
+      filename: "reading.webp", content_type: "image/webp"
+    attachment = markdown.uploads.attachments.last
+    pages(:welcome).update!(body: "This is _such_ a great handbook.\n\n![Reading](/u/#{attachment.slug})")
+
+    result = Writebook::StaticExporter.new(@dir, host: "example.com", format: "markdown").call
+
+    dir = @dir.join(book.slug)
+
+    # The upload binary is fetched into the book's flat directory...
+    image = dir.join(attachment.slug)
+    assert File.exist?(image), "expected the upload copied into the book's directory"
+    assert_operator File.size(image), :>, 0, "the copied upload should not be empty"
+
+    # ...and the markdown link now points at that file, not the live /u/ route.
+    leaf_md = dir.join("2-welcome-to-the-handbook.md").read
+    assert_includes leaf_md, "![Reading](#{attachment.slug})"
+    assert_not_includes leaf_md, "/u/", "upload links should be localized to the directory"
+    assert_includes dir.join("#{book.slug}.md").read, "(#{attachment.slug})",
+      "the whole-book file should carry the localized link too"
+
+    assert_equal 1, result.resources, "the referenced upload should be counted"
+    assert_equal 0, result.resource_failures
+  end
+
+  test "markdown export copies no html or assets" do
+    Writebook::StaticExporter.new(@dir, host: "example.com", format: "markdown").call
+
+    assert_not File.exist?(@dir.join("index.html"))
+    assert_not File.exist?(@dir.join("assets"))
+    refute_empty Dir.glob(@dir.join("**", "*.md").to_s), "expected markdown files in the export"
+    assert_empty Dir.glob(@dir.join("**", "*.html").to_s), "markdown export should not carry HTML"
+  end
+
+  test "markdown export honors the same published-book scope as the html export" do
+    books(:handbook).update!(published: false)
+
+    result = Writebook::StaticExporter.new(@dir, host: "example.com", format: "markdown").call
+
+    # index.md is still written (an empty export), but no book files exist.
+    assert_equal 0, result.books
+    assert_empty Dir.glob(@dir.join("**", "*.md").to_s) - [ @dir.join("index.md").to_s ],
+      "unpublished books must not be written by the markdown export"
+  end
 end

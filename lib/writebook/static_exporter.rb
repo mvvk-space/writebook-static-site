@@ -21,7 +21,21 @@ module Writebook
   #     ActiveStorage covers/pictures, and in-body uploads -- is fetched through
   #     the same integration session that rendered the HTML, so the bytes are
   #     always whatever a visitor's browser would actually receive.
+  #
+  # With +format: "markdown"+ the exporter instead writes the markdown-only
+  # export: one flat directory per book, holding the same front-matter .md
+  # responses the HTML export ships as <link rel="alternate"> targets -- one for
+  # the book and one per leaf, each leaf numbered by its position in the book
+  # so the directory reads in order -- plus a generated per-book index.md
+  # linking them, and every /u/… in-body upload image fetched into the
+  # directory with its link rewritten to the bare filename. The controller zips
+  # each book's directory on its own, so every book downloads as its own
+  # archive. No other assets or post-processing: the app's format.md routes are
+  # written verbatim.
   class StaticExporter
+    FORMATS = %w[html markdown].freeze
+    DEFAULT_FORMAT = "html"
+
     STATIC_ROOT_FILES = %w[favicon.svg favicon.png app-icon.png app-icon-192.png robots.txt].freeze
     PWA_PATHS = %w[/manifest.json /manifest].freeze
 
@@ -31,6 +45,14 @@ module Writebook
     # closing quote keeps the scan from over-running into adjacent HTML when a
     # URL sits in unquoted text; only the path (group 1) is captured.
     RESOURCE_URL_PATTERN = %r{(?:src|href|data-lightbox-url-value|content)\s*=\s*["'](?:https?://[^/]+)?(/(?:assets/[^"']+|u/[^"']+|rails/active_storage/[^"']+))["']}
+
+    # In-body upload links inside markdown bodies -- <tt>![alt](/u/slug.ext)</tt>
+    # or an occasional absolute pasted URL -- with an optional absolute host
+    # prefix. Group 1 is the /u/… path, group 2 the bare filename: an upload's
+    # slug already carries its extension (see ActiveStorage::Sluggable), so the
+    # localized name needs no directory. The character class keeps the scan from
+    # running past the closing ) or quote that ends the link.
+    MARKDOWN_UPLOAD_PATTERN = %r{(?:https?://[^/\s"'\)\]]+)?(/u/([\w][\w.-]*))}
 
     # <a> elements pointing at session/user/account or edit paths -- dead links
     # on a static host. Only the library's sign-in button appears in the
@@ -101,13 +123,19 @@ module Writebook
     # itself never sets them -- it always renders whatever `Book.published`
     # currently returns, and the controller scopes that set via a rolled-back
     # transaction (see StaticExportsController#generate).
-    Result = Struct.new(:books, :leaves, :assets, :resources, :resource_failures, :bytes, :book_id, :book_title, keyword_init: true)
+    #
+    # +exported_books+ is set by the markdown export: the ids of the books it
+    # wrote one directory per book for, so the result view can offer a download
+    # link per book. Ids only -- titles live in the database, and the result
+    # round-trips through the session cookie.
+    Result = Struct.new(:books, :leaves, :assets, :resources, :resource_failures, :bytes, :book_id, :book_title, :format, :exported_books, keyword_init: true)
 
-    def initialize(output_dir, host: "example.com", protocol: "https", verbose: false)
+    def initialize(output_dir, host: "example.com", protocol: "https", verbose: false, format: DEFAULT_FORMAT)
       @output_dir = Pathname.new(output_dir)
       @host = host.to_s
       @protocol = protocol.to_s
       @verbose = verbose
+      @format = FORMATS.include?(format.to_s) ? format.to_s : DEFAULT_FORMAT
       @rendered = [] # Array of [String rel, String html]
       @resource_ok = 0
       @resource_fail = 0
@@ -118,15 +146,20 @@ module Writebook
       FileUtils.rm_rf(@output_dir)
       FileUtils.mkdir_p(@output_dir)
 
-      render_library
-      mirror_precompiled_assets
-      copy_root_files
-      copy_resources
-      fetch_pwa_manifest
+      if markdown?
+        render_markdown_library
+      else
+        render_library
+        mirror_precompiled_assets
+        copy_root_files
+        copy_resources
+        fetch_pwa_manifest
+      end
 
       write_manifest
-      Result.new(books: @book_count, leaves: @leaf_count, assets: @asset_count,
-                resources: @resource_ok, resource_failures: @resource_fail, bytes: dir_size)
+      Result.new(books: @book_count, leaves: @leaf_count, assets: @asset_count || 0,
+                resources: @resource_ok, resource_failures: @resource_fail, bytes: dir_size,
+                format: @format, exported_books: @exported_books)
     ensure
       restore_url_options
     end
@@ -189,7 +222,7 @@ module Writebook
       def render(rel, html)
         html = make_relative(neutralize_search_form(strip_dead_auth_links(html)))
         write(rel, html)
-        @rendered << [rel, html]
+        @rendered << [ rel, html ]
         html
       end
 
@@ -253,6 +286,139 @@ module Writebook
         log "Rendered #{@book_count} #{'book'.pluralize(@book_count)}, #{@leaf_count} #{'leaf'.pluralize(@leaf_count)}"
       end
 
+      # The markdown-only export: one flat directory per book -- the directory
+      # the controller zips per book at download time. Content is stored as raw
+      # markdown and every read route responds to format.md with front matter +
+      # the raw source, so each file is fetched verbatim from the app -- exactly
+      # what a logged-out visitor would download from the <link rel="alternate"
+      # type="text/markdown"> targets the HTML export ships. The book and every
+      # leaf .md land flat in the book's directory, each leaf numbered by its
+      # position in the book, joined by a generated index.md; in-body upload
+      # images are fetched into the same directory and their links rewritten to
+      # bare filenames, so the directory is self-contained wherever it lands.
+      def render_markdown_library
+        log "Rendering markdown export"
+        @exported_books = [] # ids of exported books, for the result view's per-book download links
+        @book_dirs = {}      # book id (String) => directory name, so downloads scope the right zip
+        used_dirs = []
+
+        books = Book.published.ordered.to_a
+        @book_count = books.size
+        @leaf_count = 0
+
+        books.each do |book|
+          book_path = "/#{book.id}/#{book.slug}"
+          dir = unique_name(book.slug, used_dirs)
+          @book_dirs[book.id.to_s] = dir
+          @exported_books << book.id
+          log "Book ##{book.id} #{book.title.inspect} -> #{dir}/"
+
+          uploads = {} # filename => /u/… path, fetched into the directory below
+
+          # The book's own .md claims its clean slug first; "index" stays
+          # reserved for the generated table of contents.
+          used_names = [ "index" ]
+          book_md_name = unique_name(book.slug, used_names)
+          write("#{dir}/#{book_md_name}.md", localize_uploads(get("#{book_path}.md"), uploads))
+
+          # Each leaf .md is numbered by its position in the book -- 1-, 2-, …,
+          # zero-padded to the width of the leaf count -- so the flat directory
+          # lists in reading order anywhere that sorts filenames lexically, and
+          # same-titled leaves can never collide.
+          leaves = book.leaves.active.with_leafables.positioned.to_a
+          width = leaves.size.to_s.length
+          leaf_links = leaves.each_with_index.map do |leaf, index|
+            name = unique_name("#{(index + 1).to_s.rjust(width, "0")}-#{leaf.slug}", used_names)
+            write("#{dir}/#{name}.md", localize_uploads(get("#{book_path}/#{leaf.id}/#{leaf.slug}.md"), uploads))
+            @leaf_count += 1
+            "- [#{leaf.title}](#{name}.md)"
+          end
+
+          write("#{dir}/index.md", book_markdown_index(book, book_md_name, leaf_links))
+          copy_markdown_uploads(dir, uploads)
+        end
+
+        write("index.md", library_markdown_index)
+        write_book_dir_map
+        log "Wrote #{@book_count} #{'book'.pluralize(@book_count)}, #{@leaf_count} markdown #{'file'.pluralize(@leaf_count)}"
+      end
+
+      # The generated per-book table of contents: one bullet per file in the
+      # book's directory, so a visitor can read the book a page at a time or
+      # whole. Doesn't exist as a live route.
+      def book_markdown_index(book, book_md_name, leaf_links)
+        links = [ "- [The whole book as one file](#{book_md_name}.md)" ] + leaf_links
+        <<~INDEX
+          # #{book.title}
+
+          #{links.join("\n")}
+        INDEX
+      end
+
+      # A hand-rolled top-level index.md linking each book's directory, so the
+      # whole export is browsable as a tree and the in-app preview has an entry
+      # point.
+      def library_markdown_index
+        index = String.new(<<~INDEX)
+          # Writebook export
+
+          #{Date.today.strftime("%B %-d, %Y")}
+        INDEX
+
+        books = Book.published.ordered.to_a
+        books.each do |book|
+          index << "\n## [#{book.title}](#{@book_dirs[book.id.to_s]}/index.md)\n"
+        end
+        index
+      end
+
+      # Rewrites every in-body upload link (/u/<slug>, root-relative or
+      # absolute) in a markdown body to the bare filename the upload will be
+      # written under in the same directory, and records the path so
+      # +copy_markdown_uploads+ can fetch the bytes behind it.
+      def localize_uploads(markdown, uploads)
+        markdown.gsub(MARKDOWN_UPLOAD_PATTERN) do
+          uploads[$2] = $1
+          $2
+        end
+      end
+
+      # Fetches every upload referenced by a book's markdown into the book's
+      # directory, so the rewritten bare-filename links resolve inside the
+      # export instead of against the live site.
+      def copy_markdown_uploads(dir, uploads)
+        uploads.each do |filename, path|
+          if (bytes = fetch_bytes(path))
+            write("#{dir}/#{filename}", bytes, binary: true)
+            @resource_ok += 1
+          else
+            @resource_fail += 1
+            log "  could not fetch #{path}"
+          end
+        end
+      end
+
+      # Records book id => directory name so the controller can scope a
+      # per-book download zip even when the deduped directory name differs
+      # from the book's own slug (two exported books can share a title).
+      def write_book_dir_map
+        @output_dir.join("_book_dirs.json").write(JSON.generate(@book_dirs))
+      end
+
+      # Slugs collide -- two books, or two leaves in one book, can parameterize
+      # to the same name -- so directory and file names are uniquified with -2,
+      # -3 … suffixes in the order they're encountered.
+      def unique_name(base, used)
+        candidate = base.to_s
+        suffix = 1
+        while used.include?(candidate)
+          suffix += 1
+          candidate = "#{base}-#{suffix}"
+        end
+        used << candidate
+        candidate
+      end
+
       # The library's book cards auto-fetch <tt>/books/:id/bookmark</tt> into a
       # Turbo frame; the response carries the overlay link that turns a card
       # into a click target. Render that route per book so the fetch resolves on
@@ -286,7 +452,7 @@ module Writebook
         log "  externalized sidebar -> #{book_rel}/_sidebar.html (#{sidebar.bytesize} bytes)"
 
         replacement = SIDEBAR_PLACEHOLDER + "\n" + sidebar_fetch_script
-        rendered_index = @rendered.to_h { |rel, html| [rel, html] }
+        rendered_index = @rendered.to_h { |rel, html| [ rel, html ] }
 
         leaf_htmls.each do |rel, html|
           trimmed = html.sub(SIDEBAR_ASIDE_PATTERN, replacement)
@@ -347,20 +513,26 @@ module Writebook
       end
 
       def manifest_text
+        header = markdown? ? "Writebook markdown export" : "Writebook static export"
         <<~MSG
-          Writebook static export
+          #{header}
           ----------------------
+          format:    #{@format}
           host:      #{@host}
           books:     #{@book_count}
           leaves:    #{@leaf_count}
-          assets:    #{@asset_count}
+          assets:    #{@asset_count || 0}
           resources: #{@resource_ok} (failed: #{@resource_fail})
           size:      #{dir_size}
         MSG
       end
 
       def dir_size
-        `du -sh #{@output_dir}`.strip.split.first
+        `du -sh #{@output_dir} 2>/dev/null`.strip.split.first || "?"
+      end
+
+      def markdown?
+        @format == "markdown"
       end
 
       def log(message)

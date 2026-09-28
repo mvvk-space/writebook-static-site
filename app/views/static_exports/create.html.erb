@@ -1,4 +1,4 @@
-<% content_for(:title) { "Static site ready" } %>
+<% content_for(:title) { @result.format == "markdown" ? "Markdown export ready" : "Static site ready" } %>
 
 <% content_for :header do %>
   <nav>
@@ -18,23 +18,36 @@
 <% end %>
 
 <div class="panel borderless center pad fill-shade flex flex-column margin-block gap">
-  <h1 class="txt-large--responsive">Your static site is ready</h1>
+  <h1 class="txt-large--responsive"><%= @result.format == "markdown" ? "Your markdown export is ready" : "Your static site is ready" %></h1>
 
   <p class="txt-medium--responsive">
     <% if @result.book_title.present? %>
       Rendered <strong><%= @result.book_title %></strong> —
-      <strong><%= pluralize(@result.leaves, "page") %></strong>,
-      <%= pluralize(@result.assets, "asset file") %>, and
-      <%= pluralize(@result.resources, "image") %>
+      <strong><%= pluralize(@result.leaves, "page") %></strong>
+      <% if @result.format != "markdown" %>
+        , <%= pluralize(@result.assets, "asset file") %>
+      <% end %>
+      and <%= pluralize(@result.resources, "image") %>
       (<strong><%= @result.bytes %></strong>).
     <% else %>
       Rendered <strong><%= pluralize(@result.books, "book") %></strong>,
-      <strong><%= pluralize(@result.leaves, "page") %></strong>,
-      <%= pluralize(@result.assets, "asset file") %>, and
-      <%= pluralize(@result.resources, "image") %>
+      <strong><%= pluralize(@result.leaves, "page") %></strong>
+      <% if @result.format != "markdown" %>
+        , <%= pluralize(@result.assets, "asset file") %>
+      <% end %>
+      and <%= pluralize(@result.resources, "image") %>
       (<strong><%= @result.bytes %></strong>).
     <% end %>
   </p>
+
+  <% if @result.format == "markdown" %>
+    <p class="txt-medium--responsive">
+      A markdown-only export: each book is its own flat directory of front-matter
+      <code>.md</code> files — the whole book plus one per page, numbered in reading
+      order — an <code>index.md</code> linking them, and every in-body image copied
+      in. Each book downloads as its own <code>.zip</code>.
+    </p>
+  <% end %>
 
   <% if @result.resource_failures.to_i.positive? %>
     <p class="txt-medium--responsive">
@@ -45,13 +58,32 @@
   <% end %>
 
   <div class="flex align-center justify-center gap">
-    <%= link_to static_export_download_path(book_id: @result.book_id), class: "btn btn--reversed txt-medium", data: { turbo: false } do %>
-      <%= image_tag "download.svg", aria: { hidden: true }, size: 24 %>
-      <span>Download .zip</span>
+    <% if @result.format == "markdown" && @result.book_id.blank? %>
+      <% # One zip per book: a download link for each exported book's flat directory. %>
+      <div class="flex flex-column align-center gap">
+        <% Book.where(id: @result.exported_books.to_a).ordered.each do |book| %>
+          <%= link_to static_export_download_path(book_id: book.id, export_format: "markdown"), class: "btn txt-medium", data: { turbo: false } do %>
+            <%= image_tag "download.svg", aria: { hidden: true }, size: 24 %>
+            <span><%= book.title %> — .zip</span>
+          <% end %>
+        <% end %>
+      </div>
+    <% else %>
+      <%= link_to static_export_download_path(book_id: @result.book_id, export_format: @result.format), class: "btn btn--reversed txt-medium", data: { turbo: false } do %>
+        <%= image_tag "download.svg", aria: { hidden: true }, size: 24 %>
+        <span>Download .zip</span>
+      <% end %>
     <% end %>
-    <%= link_to static_site_preview_path, class: "btn txt-medium", target: "_blank" do %>
-      <%= image_tag "eye.svg", aria: { hidden: true }, size: 24 %>
-      <span>Preview site</span>
+    <% if @result.format == "markdown" %>
+      <%= link_to static_site_preview_path(path: "index.md"), class: "btn txt-medium", target: "_blank" do %>
+        <%= image_tag "eye.svg", aria: { hidden: true }, size: 24 %>
+        <span>Preview index.md</span>
+      <% end %>
+    <% else %>
+      <%= link_to static_site_preview_path, class: "btn txt-medium", target: "_blank" do %>
+        <%= image_tag "eye.svg", aria: { hidden: true }, size: 24 %>
+        <span>Preview site</span>
+      <% end %>
     <% end %>
   </div>
 </div>
@@ -66,18 +98,31 @@
 
   <div>
     <h2 class="txt-medium margin-block-end-half">Preview locally</h2>
-    <pre class="margin-block-none"><code>cd <%= @output_dir %>
+    <% if @result.format == "markdown" %>
+      <p class="margin-block-none txt-subtle">Open the files in any text editor or markdown viewer, or read them rendered on GitHub.</p>
+    <% else %>
+      <pre class="margin-block-none"><code>cd <%= @output_dir %>
 python3 -m http.server 8080</code></pre>
-    <p class="margin-block-none txt-subtle">Then open <code>http://localhost:8080</code>.</p>
+      <p class="margin-block-none txt-subtle">Then open <code>http://localhost:8080</code>.</p>
+    <% end %>
   </div>
 
   <div>
     <h2 class="txt-medium margin-block-end-half">Deploy it</h2>
-    <p class="margin-block-none">
-      Copy the <em>contents</em> of that directory to any static host — Netlify,
-      Cloudflare Pages, GitHub Pages, an S3 bucket, or your own nginx. URLs are
-      root-relative, so the site works at any domain's root with no extra config.
-    </p>
+    <% if @result.format == "markdown" %>
+      <p class="margin-block-none">
+        Each book's directory is self-contained: commit it to a repository, drop it
+        into a docs workspace that reads markdown (Obsidian, Logseq, MkDocs…), or
+        serve it as plain files. Links are relative to the directory, so it works
+        wherever it lands.
+      </p>
+    <% else %>
+      <p class="margin-block-none">
+        Copy the <em>contents</em> of that directory to any static host — Netlify,
+        Cloudflare Pages, GitHub Pages, an S3 bucket, or your own nginx. URLs are
+        root-relative, so the site works at any domain's root with no extra config.
+      </p>
+    <% end %>
   </div>
 
   <div>
@@ -85,8 +130,9 @@ python3 -m http.server 8080</code></pre>
     <p class="margin-block-none txt-subtle">
       Only published books are exported here. To include unpublished drafts, or to
       export without holding a web request open, run
-      <code>bin/rails static:generate STATIC_ALL=1</code> from the server shell —
-      it leaves your live database untouched.
+      <code>bin/rails static:generate STATIC_ALL=1</code><% if @result.format == "markdown" %> (or
+      <code>bin/rails static:markdown STATIC_ALL=1</code> for markdown)<% end %>
+      from the server shell — it leaves your live database untouched.
     </p>
   </div>
 </div>
@@ -97,7 +143,7 @@ python3 -m http.server 8080</code></pre>
       <%= image_tag "arrow-left.svg", aria: { hidden: true }, size: 24 %>
       <span>Back to library</span>
     <% end %>
-    <%= button_to static_export_path, method: :post, params: { book_id: @result.book_id }, class: "btn", data: { turbo_submits_with: "Generating…" } do %>
+    <%= button_to static_export_path, method: :post, params: { book_id: @result.book_id, export_format: @result.format }, class: "btn", data: { turbo_submits_with: "Generating…" } do %>
       <%= image_tag "refresh.svg", aria: { hidden: true }, size: 24 %>
       <span>Generate again</span>
     <% end %>

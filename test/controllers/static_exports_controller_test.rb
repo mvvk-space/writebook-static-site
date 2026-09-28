@@ -1,14 +1,20 @@
 require "test_helper"
 
 class StaticExportsControllerTest < ActionDispatch::IntegrationTest
+  # Mirrors StaticExportsController#static_dir, including the per-worker export
+  # root parallel tests install (see test_helper.rb).
+  def static_dir
+    Rails.application.config.x.static_export_root.presence || Rails.root.join("tmp/static-site")
+  end
+
   setup do
     # The exporter renders Book.published; publish the fixture book so the
     # generated site has something in it. Start from a clean output dir.
     books(:handbook).update!(published: true)
-    FileUtils.rm_rf(Rails.root.join("tmp/static-site"))
+    FileUtils.rm_rf(static_dir)
   end
 
-  teardown { FileUtils.rm_rf(Rails.root.join("tmp/static-site")) }
+  teardown { FileUtils.rm_rf(static_dir) }
 
   test "show requires authentication" do
     get static_export_url
@@ -99,7 +105,7 @@ class StaticExportsControllerTest < ActionDispatch::IntegrationTest
     assert_response :ok
     assert_match "Your static site is ready", response.body
 
-    dir = Rails.root.join("tmp/static-site")
+    dir = static_dir
     book = books(:handbook)
     assert File.exist?(dir.join(book.id.to_s, book.slug, "index.html")),
       "the unpublished draft should have been exported"
@@ -125,7 +131,7 @@ class StaticExportsControllerTest < ActionDispatch::IntegrationTest
     follow_redirect!
     assert_response :ok
 
-    dir = Rails.root.join("tmp/static-site")
+    dir = static_dir
     assert File.exist?(dir.join("index.html")), "expected the library index"
 
     book = books(:handbook)
@@ -174,7 +180,7 @@ class StaticExportsControllerTest < ActionDispatch::IntegrationTest
     assert_match "Your static site is ready", @response.body
     assert_match books(:handbook).title, @response.body
 
-    dir = Rails.root.join("tmp/static-site")
+    dir = static_dir
     handbook = books(:handbook)
     manual = books(:manual)
     assert File.exist?(dir.join(handbook.id.to_s, handbook.slug, "index.html")),
@@ -201,7 +207,7 @@ class StaticExportsControllerTest < ActionDispatch::IntegrationTest
     follow_redirect!
     assert_response :ok
 
-    dir = Rails.root.join("tmp/static-site")
+    dir = static_dir
     handbook = books(:handbook)
     manual = books(:manual)
     assert File.exist?(dir.join(handbook.id.to_s, handbook.slug, "index.html")),
@@ -224,5 +230,110 @@ class StaticExportsControllerTest < ActionDispatch::IntegrationTest
     assert_match %r{application/zip}, response.content_type.to_s
     assert_match "writebook-#{books(:handbook).slug}.zip",
                  response.headers["Content-Disposition"].to_s
+  end
+
+  test "admin create with export_format=markdown writes the markdown export and reports it" do
+    sign_in :david
+
+    post static_export_url, params: { export_format: "markdown" }
+    assert_redirected_to static_export_result_url
+    follow_redirect!
+    assert_response :ok
+
+    dir = static_dir
+    book = books(:handbook)
+    assert File.exist?(dir.join("index.md")), "expected the generated index.md"
+    assert File.exist?(dir.join(book.slug, "#{book.slug}.md")), "expected the book markdown"
+    assert_not File.exist?(dir.join("index.html")), "markdown export should not carry HTML"
+
+    # The result page offers one download per exported book.
+    assert_match "Your markdown export is ready", @response.body
+    assert_match books(:handbook).title, @response.body
+    assert_match %r{/static_export/download\?book_id=#{book.id}&amp;export_format=markdown}, @response.body
+  end
+
+  test "admin create with export_format=markdown exports a single book by id" do
+    sign_in :david
+
+    post static_export_url, params: { export_format: "markdown", book_id: books(:handbook).id }
+    follow_redirect!
+    assert_response :ok
+
+    dir = static_dir
+    handbook = books(:handbook)
+    manual = books(:manual)
+    assert File.exist?(dir.join(handbook.slug, "#{handbook.slug}.md"))
+    assert_not File.exist?(dir.join(manual.slug, "#{manual.slug}.md")),
+      "only the chosen book should be in the markdown export"
+
+    assert_match handbook.title, @response.body
+    refute_match manual.title, File.read(dir.join("index.md"))
+  end
+
+  test "admin download with export_format=markdown and book_id zips just that book's directory" do
+    sign_in :david
+    books(:handbook).update!(published: true)
+    books(:manual).update!(published: true)
+
+    post static_export_path, params: { export_format: "markdown" } # whole library
+    follow_redirect!
+
+    get static_export_download_path(book_id: books(:manual).id, export_format: "markdown")
+    assert_response :ok
+    assert_match %r{application/zip}, response.content_type.to_s
+    assert_match "writebook-#{books(:manual).slug}-markdown.zip",
+                 response.headers["Content-Disposition"].to_s
+
+    # The archive carries only that book's flat directory.
+    require "zip"
+    Zip::File.open_buffer(response.body) do |zip|
+      names = zip.entries.map(&:name)
+      assert_includes names, "#{books(:manual).slug}/#{books(:manual).slug}.md"
+      assert names.none? { |name| name.start_with?("#{books(:handbook).slug}/") },
+        "the other book's files must not be in this book's zip"
+    end
+  end
+
+  test "admin download with export_format=markdown names the zip accordingly" do
+    sign_in :david
+
+    get static_export_download_url(export_format: "markdown")
+    assert_response :ok
+    assert_match %r{application/zip}, response.content_type.to_s
+    assert_match "writebook-static-site-markdown.zip",
+                 response.headers["Content-Disposition"].to_s
+
+    dir = static_dir
+    assert File.exist?(dir.join("index.md")), "the download URL should regenerate as markdown when missing"
+  end
+
+  test "admin download with export_format=markdown regenerates when the directory holds html" do
+    sign_in :david
+
+    post static_export_url # HTML export first
+    follow_redirect!
+    assert File.exist?(static_dir.join("index.html"))
+
+    # A hand-crafted markdown download URL (the result page's own link always
+    # matches the generated format) explicitly asks for markdown, so the
+    # exporter reruns in that format rather than zipping the wrong flavor.
+    get static_export_download_url(export_format: "markdown")
+    assert_response :ok
+    assert_match %r{application/zip}, response.content_type.to_s
+
+    dir = static_dir
+    assert File.exist?(dir.join("index.md")), "the requested markdown export should have been regenerated"
+  end
+
+  test "an unknown export_format falls back to the html export" do
+    sign_in :david
+
+    post static_export_url, params: { export_format: "docx" }
+    follow_redirect!
+    assert_response :ok
+
+    assert File.exist?(static_dir.join("index.html")),
+      "an unknown format should fall back to the default html export"
+    assert_match "Your static site is ready", @response.body
   end
 end

@@ -7,9 +7,27 @@ directory you can host anywhere, with **no Rails process, login, or editing
 machinery**. All CSS/JS assets and image binaries (covers, in-body uploads,
 ActiveStorage pictures) are copied in.
 
+It also offers a **markdown-only export** (see "Export formats" below): each book
+as its own flat directory of front-matter `.md` files — the whole book plus one
+per leaf, numbered in reading order — joined by a generated `index.md`, with
+every in-body image copied in and linked relatively. Each book downloads as its
+own `.zip` — for committing a book to a repo, feeding a docs workspace, or
+reading in any markdown viewer.
+
 It's a generic feature for the OSS Writebook project — intended to be PR-able
 upstream to Basecamp — and is not coupled to any one instance. Any operator can
 export their own books from their own Writebook.
+
+## Export formats
+
+| Format | What you get | Best for |
+| --- | --- | --- |
+| **HTML** (default) | The full self-contained site: every page rendered, all CSS/JS assets, root files, PWA manifest, and every referenced image blob copied in. | Hosting a read-only replica of your library anywhere. |
+| **Markdown** | One flat directory per book: the whole book and one front-matter `.md` file per leaf — numbered by its position in the book (`1-intro.md`, `2-setup.md`, …) so the directory reads in order — plus a generated per-book `index.md` linking them, and every in-body upload image copied into the directory with its link rewritten to the bare filename. Each book is zipped on its own. | Committing a book to a repository, importing into a docs workspace (Obsidian, MkDocs, …), LLM pipelines, or archiving plain text. |
+
+Both formats share the same scoping: all published books by default, `STATIC_ALL=1`
+(or the drafts checkbox) to include drafts, or a single book by id — always inside
+a rolled-back transaction, so the live database is never touched.
 
 ## Two ways to run
 
@@ -24,20 +42,24 @@ the library page header. It opens a landing page with a selector:
   hosting one book at a time. The chosen book is exported whether or not it's
   published; the drafts checkbox only applies to the whole-library export. The
   generated site's library menu lists just that one book.
+- **Export format** — **HTML site** (default) or **Markdown only**.
 
 Clicking **Generate static site** runs the export into `tmp/static-site` and
 shows a result page with the counts and **what to do next**:
 
 - where the files are on the server,
-- how to preview locally (`cd tmp/static-site && python3 -m http.server 8080`),
-- how to deploy — copy the directory's contents to any static host (Netlify,
-  Cloudflare Pages, GitHub Pages, an S3 bucket, nginx); URLs are root-relative so
-  the site works at any domain's root with no extra config.
+- how to preview locally (for HTML: `cd tmp/static-site && python3 -m http.server 8080`),
+- how to deploy — for HTML, copy the directory's contents to any static host
+  (Netlify, Cloudflare Pages, GitHub Pages, an S3 bucket, nginx); URLs are
+  root-relative so the site works at any domain's root with no extra config. For
+  markdown, commit the directory to a repo or point a docs workspace at it.
 
-From there, **Download .zip** streams the generated site as a single archive
-(named `writebook-static-site.zip`, or `writebook-<slug>.zip` when you exported
-one book), and **Preview site** serves it from inside the app under
-`/static-site/` so you can see it rendered in a browser tab.
+From there, **Download .zip** streams the generated export — for HTML, the whole
+site as a single archive (`writebook-static-site.zip`, or `writebook-<slug>.zip`
+for one book); for markdown, **one `.zip` per book** (`writebook-<slug>-markdown.zip`),
+each holding just that book's flat directory. The preview button serves the export
+from inside the app under `/static-site/` (the rendered site for HTML; `index.md`
+for markdown).
 
 The export runs synchronously. Writebook runs no background jobs, and a
 published-only export takes seconds. For very large libraries the result page
@@ -60,6 +82,10 @@ STATIC_HOST=books.example.com bin/rails static:generate
 
 # Include unpublished books too — the live DB is left untouched:
 STATIC_ALL=1 bin/rails static:generate
+
+# Markdown-only export (same scoping flags):
+bin/rails static:markdown
+STATIC_ALL=1 bin/rails static:markdown[path/to/output]
 ```
 
 `STATIC_ALL=1` temporarily flips `published: true` inside a rolled-back
@@ -121,8 +147,8 @@ The two faithful post-processing additions:
 
 | Path | Purpose |
 | --- | --- |
-| `lib/writebook/static_exporter.rb` | `Writebook::StaticExporter` — the renderer |
-| `lib/tasks/static.rake` | `bin/rails static:generate` |
+| `lib/writebook/static_exporter.rb` | `Writebook::StaticExporter` — the renderer (HTML default, `format: "markdown"` for the markdown-only export) |
+| `lib/tasks/static.rake` | `bin/rails static:generate` and `bin/rails static:markdown` |
 | `app/controllers/static_exports_controller.rb` | Admin UI action (`show` landing, `create` runs the export; `before_action :ensure_can_administer`) |
 | `app/views/static_exports/show.html.erb` | Landing page with the Generate button |
 | `app/views/static_exports/create.html.erb` | Result page with counts + next steps |
