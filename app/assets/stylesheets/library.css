@@ -1,21 +1,52 @@
+/* Hallmark · genre: editorial · macrostructure: Index-First
+ * theme: Newsprint · design-system: design.md · designed-as-app
+ * The library is an index of plates: cover above a hairline rule, caption below.
+ */
 .library {
-  --gap: clamp(var(--inline-space), 2cqi, calc(var(--inline-space) * 3));
+  --gap: clamp(var(--space-md), 2.5cqi, var(--space-xl));
+  --row-gap: clamp(var(--space-lg), 3.5cqi, var(--space-2xl));
   --hover-size: 0;
 
   display: grid;
-  gap: var(--block-space) var(--gap);
-  grid-template-columns: repeat(auto-fit, minmax(max(150px, 14cqi), 1fr));
+  gap: var(--row-gap) var(--gap);
+  /* min() guard so a plate can never be wider than its track at 320px. */
+  grid-template-columns: repeat(auto-fill, minmax(min(9.5rem, 100%), 1fr));
   padding: var(--gap);
 }
 
+/* The index runs wider than the reading measure — the shelf is the page. */
+body:has(#main.books) #main {
+  inline-size: min(110ch, 100%);
+}
+
 .library__book {
-  --row-gap: calc(var(--block-space) * 0.2);
+  --row-gap: calc(var(--block-space) * 0.4);
 
   container-type: inline-size;
   display: flex;
   flex-direction: column;
   margin: 0;
-  text-align: center;
+  text-align: start;
+
+  h2 {
+    border-block-start: 1px solid var(--color-rule);
+    display: flex;
+    flex-direction: column;
+    font-family: var(--font-display);
+    font-weight: 600;
+    gap: 0.15em;
+    margin-block-start: var(--space-sm);
+    padding-block-start: var(--space-xs);
+
+    strong {
+      font-weight: 600;
+    }
+
+    span {
+      color: var(--color-muted);
+      font-weight: 400;
+    }
+  }
 }
 
 .library__book--empty {

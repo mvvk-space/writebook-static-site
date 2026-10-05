@@ -36,7 +36,9 @@ h4 {
 
 html,
 body {
-  overflow-x: hidden;
+  /* `clip`, not `hidden`: hidden makes the root a scroll container and breaks
+   * position: sticky on #header/#sidebar. clip just trims the horizontal axis. */
+  overflow-x: clip;
 }
 
 html {

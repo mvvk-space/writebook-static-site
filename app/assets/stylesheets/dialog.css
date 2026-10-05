@@ -1,22 +1,20 @@
 :is(.dialog) {
-  --backdrop-speed: 150ms;
+  --backdrop-speed: var(--dur-short);
   --panel-size: max-content;
-  --speed: 150ms;
+  --speed: var(--dur-short);
 
   border: 0;
   opacity: 0;
-  transform: translateY(50%);
-  transform-origin: bottom center;
+  transform: scale(0.98);
   transition:
       display var(--speed) allow-discrete,
-      opacity var(--speed),
+      opacity var(--speed) var(--ease-out),
       overlay var(--speed) allow-discrete,
-      transform var(--speed);
+      transform var(--speed) var(--ease-out);
 
   &::backdrop {
     background-color: var(--color-always-black);
     opacity: 0;
-    transform: translateY(0);
     transition:
       display var(--backdrop-speed) allow-discrete,
       opacity var(--backdrop-speed),
@@ -25,7 +23,7 @@
 
   &[open] {
     opacity: 1;
-    transform: translateY(0);
+    transform: scale(1);
 
     &::backdrop {
       opacity: 0.5;
@@ -35,7 +33,7 @@
   @starting-style {
     &[open] {
       opacity: 0;
-      transform: translateY(50%);
+      transform: scale(0.98);
     }
 
     &[open]::backdrop {

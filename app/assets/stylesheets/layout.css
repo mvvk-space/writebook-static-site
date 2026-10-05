@@ -1,7 +1,14 @@
+/* Hallmark · genre: editorial · macrostructure: Index-First (library) · Long Document (leaf)
+ * theme: Newsprint · design-system: design.md · designed-as-app
+ * Page shell. The library reads as a masthead over a plate index; every inner
+ * page reads as a running head over a measure of type.
+ */
 body {
   display: grid;
   grid-template-rows: auto auto 1fr auto;
-  grid-template-columns: 1fr;
+  /* minmax(0, …) — a track's implicit `auto` minimum would otherwise let a
+   * 65ch measure push the whole page wider than the viewport at 320px. */
+  grid-template-columns: minmax(0, 1fr);
   grid-template-areas:
     "header"
     "toolbar"
@@ -9,7 +16,7 @@ body {
     "footer";
 
   @media only screen and (min-width: 70ch) {
-    grid-template-columns: auto 1fr;
+    grid-template-columns: auto minmax(0, 1fr);
     grid-template-areas:
       "sidebar header"
       "sidebar toolbar"
@@ -21,15 +28,15 @@ body {
 :where(#main) {
   container-type: inline-size;
   font-size: var(--font-medium-responsive);
-  inline-size: min(67ch, 75vw);
+  inline-size: min(65ch, 75vw);
   margin-inline: auto;
-  max-inline-size: 100vw;
+  max-inline-size: 100%;
   padding-block-end: clamp(var(--block-space), 5%, calc(var(--block-space) * 3));
   padding-inline: clamp(var(--inline-space), 5%, calc(var(--inline-space) * 3));
   text-align: center;
 
   @media (max-width: 70ch) {
-    inline-size: min(67ch, 100vw);
+    inline-size: min(65ch, 100%);
     padding-inline: var(--inline-space);
   }
 
@@ -48,7 +55,7 @@ body {
 
 :where(#footer) {
   grid-area: footer;
-  max-inline-size: 100vw;
+  max-inline-size: 100%;
   view-transition-name: footer;
 
   > nav {
@@ -65,10 +72,9 @@ body {
 
 :where(#header) {
   grid-area: header;
-  max-inline-size: 100vw;
-  transition: margin-inline-start 0.2s ease-out;
+  max-inline-size: 100%;
   view-transition-name: header;
-  z-index: 1;
+  z-index: var(--z-raised);
 
   :has(#sidebar-toggle:checked) & {
     @media (min-width: 70ch) {
@@ -93,16 +99,41 @@ body {
   }
 }
 
+/* The library front page opens on a masthead: centred wordmark, double rule
+ * below — the one place the app stops being a tool and becomes a title page. */
+body:has(#main.books) #header > nav {
+  border-block-end: 3px double var(--color-ink);
+  padding-block: var(--block-space);
+
+  .product__wordmark {
+    font-size: var(--font-large-responsive);
+    letter-spacing: -0.01em;
+  }
+}
+
+/* Every inner page carries a running head: hairline under the breadcrumb row. */
+#header > nav {
+  border-block-end: 1px solid var(--color-rule);
+}
+
+/* The wordmark is the one place the display face signs the page. */
+.product__wordmark {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+}
+
 :where(#sidebar) {
-  background-color: var(--color-subtle-light);
+  background-color: var(--color-paper-2);
   block-size: 100%;
+  border-inline-end: 1px solid var(--color-rule);
   font-size: var(--font-medium-responsive);
   grid-area: sidebar;
   inline-size: 25vw;
   max-block-size: 100%;
   overflow: auto;
   position: relative;
-  transition: margin-inline-start 0.2s ease-out;
 
   :has(#sidebar-toggle:checked) & {
     margin-inline-start: 0;
@@ -118,6 +149,7 @@ body {
 }
 
 :where(#toolbar) {
+  align-items: center;
   display: flex;
   grid-area: toolbar;
   inset: 0 0 auto;
@@ -127,7 +159,7 @@ body {
   padding-inline: var(--inline-space);
   position: sticky;
   view-transition-name: toolbar;
-  z-index: 1;
+  z-index: var(--z-raised);
 }
 
 :is(#header, #footer, #sidebar, #toolbar) {

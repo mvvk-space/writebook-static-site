@@ -1,29 +1,30 @@
-:root {
-  --btn-size: 2.65em;
-}
-
+/* Hallmark · genre: editorial · theme: Newsprint · design-system: design.md
+ * Control voice: hairline outlines, square corners, semibold serif labels.
+ * Press/state changes land instantly — no motion beyond the functional.
+ */
 .btn {
-  --transition: 300ms ease;
-
   align-items: center;
   background-color: var(--btn-background, transparent);
-  border-radius: var(--btn-border-radius, 2em);
-  border: var(--btn-border-size, 1px) solid var(--btn-border-color, var(--color-subtle-dark));
+  border-radius: var(--btn-border-radius, var(--radius-btn));
+  border: var(--btn-border-size, 1px) solid var(--btn-border-color, var(--color-border));
   color: var(--btn-color, var(--color-ink));
   cursor: pointer;
   display: inline-flex;
+  font-family: var(--font-body);
   font-size: 1em;
   font-weight: 600;
   gap: var(--btn-gap, 0.5em);
   justify-content: center;
-  padding: var(--btn-padding, 0.5em 1.1em);
+  min-block-size: var(--btn-size);
+  padding: var(--btn-padding, 0.45em 0.9em);
   pointer-events: auto;
+  text-decoration: none;
+  white-space: nowrap;
   transition:
-    background-color var( --transition),
-    border var( --transition),
-    color var( --transition),
-    filter var( --transition),
-    opacity var( --transition);
+    background-color var(--dur-micro) var(--ease-out),
+    border-color var(--dur-micro) var(--ease-out),
+    color var(--dur-micro) var(--ease-out),
+    opacity var(--dur-micro) var(--ease-out);
 
   img {
     -webkit-touch-callout: none;
@@ -50,10 +51,10 @@
     }
   }
 
-  /* Circle buttons */
+  /* Square control plates — the medium has corners, not capsules. */
   &.btn--circle,
   &:where(:has(.for-screen-reader):has(img, svg)) {
-    --btn-border-radius: 50%;
+    --btn-border-radius: var(--radius-btn);
     --btn-padding: 0;
 
     aspect-ratio: 1;
@@ -87,6 +88,7 @@
 
   &:has(input:checked)  {
     --btn-background: var(--color-ink);
+    --btn-border-color: var(--color-ink);
     --btn-color: var(--color-ink-reversed);
     --outline-color: var(--color-ink);
 
@@ -105,6 +107,11 @@
     }
   }
 
+  /* Press: the plate inks over. Instant — no spatial motion. */
+  &:where(:active) {
+    background-color: var(--color-paper-2);
+  }
+
   &[disabled],
   &:has([disabled]),
   [disabled] &[type=submit],
@@ -121,13 +128,15 @@
 
 /* Variants */
 .btn--link {
-  --btn-background: var(--color-link);
-  --btn-color: var(--color-ink-reversed);
-  --outline-color: var(--color-link);
+  --btn-background: var(--color-accent);
+  --btn-border-color: var(--color-accent);
+  --btn-color: var(--color-accent-ink);
+  --outline-color: var(--color-accent);
 }
 
 .btn--negative {
   --btn-background: var(--color-negative);
+  --btn-border-color: var(--color-negative);
   --btn-color: var(--color-ink-reversed);
   --outline-color: var(--color-negative);
 }
@@ -138,7 +147,7 @@
 }
 
 .btn--plain {
-  --btn-border-radius: 0.5em;
+  --btn-border-radius: 0;
   --btn-border-size: 0;
   --btn-icon-size: 100%;
   --btn-padding: 0;
@@ -147,19 +156,19 @@
 
 .btn--positive {
   --btn-background: var(--color-positive);
+  --btn-border-color: var(--color-positive);
   --btn-color: var(--color-ink-reversed);
   --outline-color: var(--color-positive);
 }
 
 .btn--reversed {
   --btn-background: var(--color-ink);
-  --btn-color: var(--color-bg);
+  --btn-border-color: var(--color-ink);
+  --btn-color: var(--color-ink-reversed);
   --outline-color: var(--color-ink);
 }
 
 :is(.btn--link, .btn--negative, .btn--positive, .btn--reversed) {
-  --btn-border-color: var(--color-bg);
-
   img:not([class]) {
     filter: invert(1);
 
@@ -171,12 +180,4 @@
 
 .btn--small {
   font-size: 0.8em;
-}
-
-.btn--success {
-  animation: success 1s ease-out;
-
-  img {
-    animation: zoom-fade 300ms ease-out;
-  }
 }

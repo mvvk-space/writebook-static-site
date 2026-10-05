@@ -1,3 +1,8 @@
+/* Hallmark · genre: editorial · macrostructure: Long Document
+ * theme: Newsprint · design-system: design.md · designed-as-app
+ * The reading surface: a chapter opener for section leaves, a 65ch measure for
+ * prose, a plate for pictures. Emphasis is weight and rules — never italic heads.
+ */
 #main:has(.page--section, .page--picture) {
   display: grid;
 }
@@ -7,44 +12,50 @@
   padding: 0;
 
   figcaption {
-    inline-size: 67ch;
+    color: var(--color-muted);
+    font-size: var(--font-small-responsive);
+    inline-size: 65ch;
     margin-inline: auto;
-    max-inline-size: 100dvw;
+    max-inline-size: 100%;
+    padding-block-start: var(--space-sm);
     padding-inline: clamp(var(--inline-space), 5%, calc(var(--inline-space) * 3));
   }
 }
 
+/* A section leaf set to its own night edition. Same hues, lightness/chroma
+ * moved — never a hue switch, per the dark-mode recipe. */
 :has(#section_theme[value=dark]:checked),
 :not(:has(#section_theme[value=dark])):has(.page--section.theme--dark) {
-  --lch-black: 100% 0 0;
-  --lch-white: 0% 0 0;
-  --lch-gray-light: 25.2% 0 0;
-  --lch-gray: 30.12% 0 0;
-  --lch-gray-dark: 44.95% 0 0;
-  --lch-blue: 72.25% 0.16 248;
-  --lch-blue-light: 28.11% 0.053 248;
-  --lch-blue-dark: 42.25% 0.07 248;
-  --lch-red: 73.8% 0.184 29.18;
-  --lch-green: 75% 0.21 141.89;
-  --lch-green-light: 28.11% 0.02 142.49;
-  --lch-yellow: 40.9% 0.06 88.9;
+  --lch-black: 92.5% 0.010 80;
+  --lch-white: 17% 0.012 70;
+  --lch-gray-light: 24% 0.013 70;
+  --lch-gray: 38% 0.012 70;
+  --lch-gray-dark: 58% 0.012 72;
+  --lch-muted: 70% 0.010 75;
+  --lch-blue: 72% 0.145 40;
+  --lch-blue-light: 30% 0.055 38;
+  --lch-blue-dark: 40% 0.07 36;
+  --lch-orange: 78% 0.13 68;
+  --lch-red: 70% 0.16 26;
+  --lch-green: 74% 0.12 152;
+  --lch-green-light: 30% 0.035 152;
+  --lch-yellow: 40% 0.07 88;
 
   @media (prefers-color-scheme: dark) {
-    --lch-black: 0% 0 0;
-    --lch-white: 100% 0 0;
-    --lch-gray-light: 96% 0.005 96;
-    --lch-gray: 92% 0.005 96;
-    --lch-gray-dark: 75% 0.005 96;
-    --lch-blue: 54% 0.15 255;
-    --lch-blue-light: 95% 0.03 255;
-    --lch-blue-dark: 80% 0.08 255;
-    --lch-orange: 70% 0.2 44;
-    --lch-red: 51% 0.2 31;
-    --lch-green: 65.59% 0.234 142.49;
-    --lch-green-light: 95% 0.03 142.49;
-    --lch-always-black: 0% 0 0;
-    --lch-always-white: 100% 0 0;
-    --lch-yellow: 92.62% 0.1 91.5;
+    --lch-black: 20% 0.012 65;
+    --lch-white: 96.5% 0.012 82;
+    --lch-gray-light: 91.5% 0.014 82;
+    --lch-gray: 78% 0.013 80;
+    --lch-gray-dark: 62% 0.014 75;
+    --lch-muted: 46% 0.013 70;
+    --lch-blue: 46% 0.165 33;
+    --lch-blue-light: 93.5% 0.045 42;
+    --lch-blue-dark: 87% 0.06 38;
+    --lch-orange: 68% 0.15 65;
+    --lch-red: 44% 0.185 22;
+    --lch-green: 42% 0.105 152;
+    --lch-green-light: 94% 0.035 152;
+    --lch-yellow: 90% 0.115 88;
   }
 
   img,
@@ -70,17 +81,64 @@
   }
 }
 
+/* A section leaf is a chapter opener: left-biased, rules above, display face. */
+.page--section {
+  align-self: start;
+  justify-self: stretch;
+  padding-block: var(--space-2xl);
+  text-align: start;
+
+  h1 {
+    border-block-start: 1px solid var(--color-rule);
+    font-size: var(--text-display);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.04;
+    overflow-wrap: anywhere;
+    padding-block-start: var(--space-lg);
+    text-wrap: balance;
+
+    p {
+      margin: 0;
+    }
+  }
+}
+
+/* The prose measure. 1.65 leading, 65ch line, first-line indent free. */
+.page--page {
+  line-height: 1.65;
+  text-align: start;
+
+  > :first-child {
+    margin-block-start: 0;
+  }
+}
+
+.page__body {
+  text-align: start;
+}
+
+:is(.page--section, .page--picture) {
+  @media print {
+    place-self: center;
+  }
+}
+
+.page--picture {
+  place-self: center;
+}
 
 .page-toolbar {
-  --padding-block: 0.5em;
-  --padding-inline: 1.1em;
+  --padding-block: 0.4em;
+  --padding-inline: 0.9em;
 
-  border-radius: 5em;
+  border-radius: var(--radius-btn);
   display: inline-flex;
+  align-items: center;
   margin: var(--block-space-half) auto 0;
   min-width: 0;
   padding: var(--padding-block) var(--padding-inline);
-  transition: background-color 300ms ease;
+  transition: background-color var(--dur-micro) var(--ease-out);
 
   .separator {
     block-size: 100%;
@@ -94,14 +152,6 @@
 
     flex-shrink: 0;
   }
-}
-
-:is(.page__body, .page--page) {
-  text-align: start;
-}
-
-:is(.page--section, .page--picture) {
-  place-self: center;
 }
 
   body:has(#leafable-editor.clean) {
@@ -123,10 +173,10 @@
 
   body:has(#leafable-editor.dirty) {
     & .page-toolbar__save {
-      --btn-background: var(--color-link);
+      --btn-background: var(--color-accent);
       --btn-border-color: var(--color-bg);
-      --btn-color: var(--color-ink-reversed);
-      --outline-color: var(--color-link);
+      --btn-color: var(--color-accent-ink);
+      --outline-color: var(--color-accent);
 
       img {
         filter: invert(1);
@@ -172,9 +222,9 @@ body:not(.edit-mode) .hide_from_reading_mode {
 }
 
 .being-edited-by {
-  animation: fade-out 300ms ease-out 20s;
+  animation: fade-out var(--dur-long) var(--ease-out) 20s;
   background-color: var(--color-ink);
-  border-radius: 2em;
+  border-radius: var(--radius-btn);
   color: var(--color-ink-reversed);
   padding: 0.5em 1em;
 }

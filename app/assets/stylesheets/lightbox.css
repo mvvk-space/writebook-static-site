@@ -1,10 +1,14 @@
+/* Hallmark · genre: editorial · theme: Newsprint · design-system: design.md
+ * The lightbox is an overlay, so its blur communicates depth (the one place
+ * glass is allowed). Sizes use % — never 100vw, which includes the scrollbar.
+ */
 .lightbox {
-  --speed: 150ms;
+  --speed: var(--dur-short);
 
   background-color: oklch(var(--lch-white) / 0.66);
   block-size: 100dvh;
   border: 0;
-  inline-size: 100dvw;
+  inline-size: 100%;
   inset: 0;
   margin: auto;
   max-height: unset;
@@ -13,14 +17,14 @@
   padding: var(--block-space-half) var(--inline-space);
 
   &::backdrop {
-    -webkit-backdrop-filter: blur(66px);
-    backdrop-filter: blur(66px);
+    -webkit-backdrop-filter: blur(32px);
+    backdrop-filter: blur(32px);
     background-color: var(--color-ink);
     opacity: 0;
     transition:
-      display var(--backdrop-speed) allow-discrete,
-      opacity var(--backdrop-speed),
-      overlay var(--backdrop-speed) allow-discrete;
+      display var(--speed) allow-discrete,
+      opacity var(--speed),
+      overlay var(--speed) allow-discrete;
   }
 
   &[open] {
@@ -52,6 +56,6 @@
 
 .lightbox__image {
   grid-area: 1/1;
-  max-inline-size: calc(100dvw - (var(--inline-space) * 2));
+  max-inline-size: calc(100% - (var(--inline-space) * 2));
   max-block-size: calc(100dvh - (var(--block-space) * 2));
 }

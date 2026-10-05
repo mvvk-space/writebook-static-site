@@ -1,0 +1,72 @@
+/* Hallmark · genre: editorial · theme: Newsprint
+ * Portable mirror of the app's live token block (app/assets/stylesheets/colors.css).
+ * Every colour, font, space, size, motion and radius in the build resolves through
+ * one of these names. Copy this file into another project to reuse the system.
+ */
+:root {
+  /* Colour — light (day edition). Dark overrides live in the app's colors.css. */
+  --color-paper: oklch(96.5% 0.012 82);
+  --color-paper-2: oklch(91.5% 0.014 82);
+  --color-rule: oklch(84% 0.013 80);
+  --color-ink: oklch(20% 0.012 65);
+  --color-ink-2: oklch(62% 0.014 75);
+  --color-border: oklch(62% 0.014 75);
+  --color-muted: oklch(46% 0.013 70);
+  --color-accent: oklch(46% 0.165 33);
+  --color-accent-ink: oklch(96.5% 0.012 82);
+  --color-focus: oklch(46% 0.165 33);
+  --color-marker: oklch(68% 0.15 65);
+  --color-highlight: oklch(90% 0.115 88);
+  --color-selected: oklch(93.5% 0.045 42);
+  --color-negative: oklch(44% 0.185 22);
+  --color-positive: oklch(42% 0.105 152);
+
+  /* Type — display serif + reading serif + one mono outlier. */
+  --font-display: "Newsreader", ui-serif, Georgia, "Times New Roman", serif;
+  --font-body: "Spectral", ui-serif, Georgia, "Times New Roman", serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Space — 4-pt scale, named by role. */
+  --space-3xs: 0.125rem;
+  --space-2xs: 0.25rem;
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2.5rem;
+  --space-2xl: 4rem;
+  --space-3xl: 6rem;
+  --space-4xl: 9rem;
+
+  /* Type scale — 1.25 major third. */
+  --text-xs: 0.8rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-md: 1.25rem;
+  --text-lg: 1.5625rem;
+  --text-xl: 1.953rem;
+  --text-2xl: 2.441rem;
+  --text-3xl: 3.052rem;
+  --text-display: clamp(2.25rem, 4.5cqi + 1rem, 3.5rem);
+  --text-display-s: clamp(1.75rem, 3cqi + 0.75rem, 2.5rem);
+
+  /* Motion — the print register. */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-none: 0ms;
+  --dur-micro: 100ms;
+  --dur-short: 180ms;
+  --dur-long: 300ms;
+
+  /* Corner discipline — paper has corners, not capsules. */
+  --radius-plate: 2px;
+  --radius-btn: 2px;
+  --radius-input: 2px;
+  --radius-card: 3px;
+  --radius-panel: 3px;
+
+  --control-size: 2.75rem;
+
+  --shadow-whisper: 0 1px 2px oklch(0% 0 0 / 0.05);
+}

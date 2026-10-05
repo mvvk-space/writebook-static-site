@@ -1,3 +1,7 @@
+/* Hallmark · genre: editorial · theme: Newsprint · design-system: design.md
+ * Editing-mode drag affordances. Colour is the only signal here — no pulses,
+ * no looping animation (the theme has none).
+ */
 .arrangement {
   container-type: inline-size;
 }
@@ -35,7 +39,7 @@
 
     &:where(:has(#toc-grid:checked)) {
       .toc__thumbnail {
-        border-color: var(--color-link);
+        border-color: var(--color-accent);
       }
     }
   }
@@ -54,9 +58,9 @@
 }
 
 .arrangement-drag-image {
-  background-color: var(--color-link);
-  border-radius: 1rem;
-  color: var(--color-ink-reversed);
+  background-color: var(--color-accent);
+  border-radius: var(--radius-input);
+  color: var(--color-accent-ink);
   inset: auto 100% 100% auto;
   line-height: 2rem;
   padding: 0 1rem;
@@ -70,16 +74,12 @@
 }
 
 .arrangement-placeholder {
-  background-color: var(--color-subtle-light);
-  border: 1px dashed var(--color-subtle-dark);
-  border-radius: 0.2em;
+  background-color: var(--color-paper-2);
+  border: 1px dashed var(--color-rule);
+  border-radius: var(--radius-input);
 }
 
 .arrangement-selected {
   background-color: var(--color-selected);
-  border-radius: 0.2em;
-
-  .arrangement-move-mode & {
-    animation: pulse 1000ms infinite;
-  }
+  border-radius: var(--radius-input);
 }

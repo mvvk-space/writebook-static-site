@@ -1,54 +1,156 @@
+/* Hallmark · genre: editorial
+ * macrostructure: Index-First (library) · Catalogue (book table of contents) · Long Document (leaf)
+ * theme: Newsprint · paper-band: light · display-style: roman-serif · accent-hue: warm (printer's red)
+ * design-system: design.md · designed-as-app
+ * nav: masthead double-rule (library) + running head (inner pages) · footer: Ft2 inline colophon
+ * enrichment: none (typography only) · motion: cut to the print register (functional only)
+ * slop: pass (1–57; 28–29, 31, 44 N/A — no enrichment, no hero) · contrast: pass (40–41)
+ * honest: pass (46) · chrome: pass (47) · tokens: pass (48) · responsive: pass (49)
+ * mobile: pass (34, 49–57) · icons: pass (30) · type: 3 families (37–38)
+ * pre-emit critique: P5 H4 E5 S4 R5 V5
+ *
+ * The one token file. Every colour, font, space, motion and radius in the app
+ * resolves through a name declared here — no inline values anywhere else.
+ */
 :root {
-  /* Named color values */
-  --lch-black: 0% 0 0;
-  --lch-white: 100% 0 0;
-  --lch-gray-light: 96% 0.005 96;
-  --lch-gray: 92% 0.005 96;
-  --lch-gray-dark: 75% 0.005 96;
-  --lch-blue: 54% 0.15 255;
-  --lch-blue-light: 95% 0.03 255;
-  --lch-blue-dark: 80% 0.08 255;
-  --lch-orange: 70% 0.2 44;
-  --lch-red: 51% 0.2 31;
-  --lch-green: 65.59% 0.234 142.49;
-  --lch-green-light: 95% 0.03 142.49;
+  /* Primitives — OKLCH triples, composed with `oklch(var(--lch-…))` below.
+   * Tinted toward the 82/70 paper-ink anchor: the stock is warm, the ink is
+   * warm-black. Never pure #000 / #fff. */
+  --lch-black: 20% 0.012 65;        /* ink */
+  --lch-white: 96.5% 0.012 82;      /* paper */
+  --lch-gray-light: 91.5% 0.014 82; /* paper-2 — sidebar, inset surfaces */
+  --lch-gray: 78% 0.013 80;         /* rule — hairlines, table rules, hr */
+  --lch-gray-dark: 62% 0.014 75;    /* border — control outlines, dotted leaders */
+  --lch-muted: 46% 0.013 70;        /* muted — secondary text (≥4.5:1 on paper) */
+  --lch-blue: 46% 0.165 33;         /* accent — printer's red */
+  --lch-blue-light: 93.5% 0.045 42; /* selection band */
+  --lch-blue-dark: 87% 0.06 38;     /* selection band, pressed */
+  --lch-orange: 68% 0.15 65;        /* marker — the "last read" ochre bookmark */
+  --lch-red: 44% 0.185 22;          /* negative */
+  --lch-green: 42% 0.105 152;       /* positive */
+  --lch-green-light: 94% 0.035 152;
   --lch-always-black: 0% 0 0;
   --lch-always-white: 100% 0 0;
-  --lch-yellow: 92.62% 0.1 91.5;
+  --lch-yellow: 90% 0.115 88;       /* highlight — search band, like a real marker */
 
-  /* Abstractions */
-  --color-negative: oklch(var(--lch-red));
-  --color-positive: oklch(var(--lch-green));
-  --color-positive-light: oklch(var(--lch-green-light));
-  --color-bg: oklch(var(--lch-white));
+  /* Redefine the primitives for the night edition. Hue never moves — only
+   * lightness and chroma, per the dark-mode recipe. */
+  @media (prefers-color-scheme: dark) {
+    --lch-black: 92.5% 0.010 80;
+    --lch-white: 17% 0.012 70;
+    --lch-gray-light: 24% 0.013 70;
+    --lch-gray: 38% 0.012 70;
+    --lch-gray-dark: 58% 0.012 72;
+    --lch-muted: 70% 0.010 75;
+    --lch-blue: 72% 0.145 40;
+    --lch-blue-light: 30% 0.055 38;
+    --lch-blue-dark: 40% 0.07 36;
+    --lch-orange: 78% 0.13 68;
+    --lch-red: 70% 0.16 26;
+    --lch-green: 74% 0.12 152;
+    --lch-green-light: 30% 0.035 152;
+    --lch-yellow: 40% 0.07 88;
+  }
+
+  /* Surfaces and ink */
+  --color-paper: oklch(var(--lch-white));
+  --color-paper-2: oklch(var(--lch-gray-light));
+  --color-rule: oklch(var(--lch-gray));
+  --color-bg: var(--color-paper);
   --color-ink: oklch(var(--lch-black));
+  --color-ink-2: oklch(var(--lch-gray-dark));
+  /* Control and plate boundaries that must clear 3:1 against paper. */
+  --color-border: oklch(var(--lch-gray-dark));
   --color-ink-reversed: oklch(var(--lch-white));
+  --color-muted: oklch(var(--lch-muted));
+
+  /* Accent and interaction */
   --color-link: oklch(var(--lch-blue));
-  --color-subtle-light: oklch(var(--lch-gray-light));
-  --color-subtle: oklch(var(--lch-gray));
-  --color-subtle-dark: oklch(var(--lch-gray-dark));
+  --color-accent: oklch(var(--lch-blue));
+  --color-accent-ink: oklch(var(--lch-white));
+  --color-focus: oklch(var(--lch-blue));
   --color-selected: oklch(var(--lch-blue-light));
   --color-selected-dark: oklch(var(--lch-blue-dark));
   --color-marker: oklch(var(--lch-orange));
-  --color-always-black: oklch(var(--lch-always-black));
-  --color-always-white: oklch(var(--lch-always-white));
   --color-highlight: oklch(var(--lch-yellow));
 
-  /* Redefine named color values for dark mode */
-  @media (prefers-color-scheme: dark) {
-    --lch-black: 100% 0 0;
-    --lch-white: 0% 0 0;
-    --lch-gray-light: 25.2% 0 0;
-    --lch-gray: 30.12% 0 0;
-    --lch-gray-dark: 44.95% 0 0;
-    --lch-blue: 72.25% 0.16 248;
-    --lch-blue-light: 28.11% 0.053 248;
-    --lch-blue-dark: 42.25% 0.07 248;
-    --lch-red: 73.8% 0.184 29.18;
-    --lch-green: 75% 0.21 141.89;
-    --lch-green-light: 28.11% 0.02 142.49;
-    --lch-yellow: 40.9% 0.06 88.9;
-  }
+  /* Legacy aliases — the app's existing class names resolve through these. */
+  --color-subtle-light: oklch(var(--lch-gray-light));
+  --color-subtle: oklch(var(--lch-gray));
+  --color-subtle-dark: oklch(var(--lch-gray-dark));
+  --color-negative: oklch(var(--lch-red));
+  --color-positive: oklch(var(--lch-green));
+  --color-positive-light: oklch(var(--lch-green-light));
+  --color-always-black: oklch(var(--lch-always-black));
+  --color-always-white: oklch(var(--lch-always-white));
+
+  /* Type — 2 + 1: a roman serif display, a reading serif body, one mono outlier
+   * for code and tabular data. Self-hosted (OFL) via fonts.css; nothing is
+   * fetched from a font CDN, so the static export stays self-contained. */
+  --font-display: "Newsreader", ui-serif, Georgia, "Times New Roman", serif;
+  --font-body: "Spectral", ui-serif, Georgia, "Times New Roman", serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-wordmark: var(--font-display);
+  --font-sans: var(--font-body);
+  --font-serif: var(--font-display);
+
+  /* Space — 4pt scale, named by role. */
+  --space-3xs: 0.125rem;
+  --space-2xs: 0.25rem;
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2.5rem;
+  --space-2xl: 4rem;
+  --space-3xl: 6rem;
+  --space-4xl: 9rem;
+
+  /* Type scale — 1.25 (major third), clamped on the container. */
+  --text-xs: 0.8rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-md: 1.25rem;
+  --text-lg: 1.5625rem;
+  --text-xl: 1.953rem;
+  --text-2xl: 2.441rem;
+  --text-3xl: 3.052rem;
+  --text-display: clamp(2.25rem, 4.5cqi + 1rem, 3.5rem);
+  --text-display-s: clamp(1.75rem, 3cqi + 0.75rem, 2.5rem);
+
+  /* Motion — the Newsprint register is print: state changes land instantly,
+   * only functional movement (sidebar, dialog, view transition) animates. */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-none: 0ms;
+  --dur-micro: 100ms;
+  --dur-short: 180ms;
+  --dur-long: 300ms;
+
+  /* Corner discipline — the medium is paper, so radius is a hairline, not a pill. */
+  --radius-plate: 2px;
+  --radius-btn: 2px;
+  --radius-input: 2px;
+  --radius-card: 3px;
+  --radius-panel: 3px;
+
+  /* Controls. Absolute rem, so a field and its submit button always line up
+   * regardless of each element's own font-size. 2.75rem = 44px ⇒ touch floor. */
+  --control-size: 2.75rem;
+  --btn-size: var(--control-size);
+
+  /* Depth — hairlines and rules, never stacks of shadow. */
+  --shadow-whisper: 0 1px 2px oklch(var(--lch-always-black) / 0.05);
+
+  /* Z — six named levels. */
+  --z-base: 1;
+  --z-raised: 10;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-modal: 400;
+  --z-toast: 500;
+  --z-tooltip: 600;
 }
 
 .colorize--white {

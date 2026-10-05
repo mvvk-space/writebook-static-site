@@ -1,14 +1,16 @@
 /* Text inputs */
 .input {
-  accent-color: var(--input-accent-color, var(--color-ink));
+  accent-color: var(--input-accent-color, var(--color-accent));
   background-color: var(--input-background, transparent);
-  border-radius: var(--input-border-radius, 0.5em);
-  border: var(--input-border-size, 1px) solid var(--input-border-color, var(--color-subtle-dark));
+  border-radius: var(--input-border-radius, var(--radius-input));
+  border: var(--input-border-size, 1px) solid var(--input-border-color, var(--color-border));
   color: var(--input-color, var(--color-ink));
   font-size: max(16px, 1em);
   inline-size: 100%;
   line-height: 1.2;
   max-inline-size: 100%;
+  /* Share the control height with .btn so a field and its submit button align. */
+  min-block-size: var(--btn-size);
   padding: var(--input-padding, 0.5em 0.8em);
   resize: none;
 
@@ -21,8 +23,8 @@
   }
 
   &:where(:not(:active)):focus {
-    --input-border-color: var(--color-selected-dark);
-    --hover-color: var(--color-selected-dark);
+    --input-border-color: var(--color-ink);
+    --hover-color: var(--color-ink);
     --outline-size: 0;
     --outline-color: transparent;
 
@@ -43,12 +45,12 @@
   }
 
   img {
-    border-radius: 0.4em;
+    border-radius: var(--radius-input);
   }
 
   input[type="file"] {
     --input-border-color: transparent;
-    --input-border-radius: 8px;
+    --input-border-radius: var(--radius-input);
 
     block-size: 100%;
     cursor: pointer;
@@ -64,9 +66,12 @@
 
     &:focus,
     &:focus-visible {
-      --input-border-color: var(--color-selected-dark);
-      --input-border-radius: 8px;
-      --input-border-size: 0.15rem;
+      --input-border-color: var(--color-ink);
+      --input-border-radius: var(--radius-input);
+
+      /* Outline, not a thicker border: the field must not shift geometry. */
+      outline: 2px solid var(--color-focus);
+      outline-offset: 2px;
     }
   }
 }
@@ -111,12 +116,12 @@
 }
 
 .switch__btn {
-  background-color: var(--color-subtle-dark);
+  background-color: var(--color-border);
   border-radius: 2em;
   cursor: pointer;
   inset: 0;
   position: absolute;
-  transition: 150ms ease;
+  transition: background-color var(--dur-micro) var(--ease-out);
 
   &::before {
     background-color: var(--color-ink-reversed);
@@ -127,16 +132,16 @@
     inset-block-end: 0.2em;
     inset-inline-start: 0.2em;
     position: absolute;
-    transition: 150ms ease;
+    transition: transform var(--dur-micro) var(--ease-out);
   }
 
   .switch__input:disabled + & {
-    background-color: var(--color-subtle-dark) !important;
+    background-color: var(--color-border) !important;
     cursor: not-allowed;
   }
 
   .switch__input:checked + & {
-    background-color: var(--color-link);
+    background-color: var(--color-accent);
 
     &::before {
       transform: translateX(1.2em);
@@ -146,11 +151,13 @@
 
 /* Containers that act like (and contain) inputs */
 .input--actor {
-  transition: box-shadow 150ms ease, outline-offset 150ms ease;
+  /* The wrapper's own padding is the field's padding; its height comes from its
+   * contents, so it must not also carry the control min-height. */
+  min-block-size: 0;
 
   &:focus-within {
-    --input-border-color: var(--color-selected-dark);
-    --hover-color: var(--color-selected-dark);
+    --input-border-color: var(--color-ink);
+    --hover-color: var(--color-ink);
     --outline-size: 0;
 
     filter: var(--hover-filter);
@@ -167,6 +174,7 @@
     --outline-color: transparent;
 
     inline-size: 100%;
+    min-block-size: 0;
     outline: 0;
   }
 

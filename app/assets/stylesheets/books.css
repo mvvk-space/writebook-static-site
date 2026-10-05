@@ -1,4 +1,11 @@
+/* Hallmark · genre: editorial · macrostructure: Catalogue (book table of contents)
+ * theme: Newsprint · design-system: design.md · designed-as-app
+ * The book page is a title page over a catalogue of leaves; the library card is
+ * a plate with its caption set under a hairline.
+ */
 :root {
+  /* A book's own ink. These seven are authorial choices, so they keep their
+   * chroma; they only ever fill a swatch or a drawn cover, never a surface. */
   --theme-color--blue: oklch(69.14% 0.174 245.01);
   --theme-color--orange: oklch(70.22% 0.2 45.1);
   --theme-color--magenta: oklch(61.8% 0.19 354.64);
@@ -12,14 +19,19 @@
   inline-size: 100%;
 }
 
+/* The book page runs as wide as the index: plate column + catalogue column. */
+body:has(#main.book) #main {
+  inline-size: min(110ch, 100%);
+}
+
 .book {
   --cover-height: auto;
-  --space: clamp(2ch, 10%, 6ch);
+  --space: clamp(2ch, 8%, 5ch);
 
   container-type: unset;
-  column-gap: calc(var(--space) / 2);
+  column-gap: var(--space);
   display: grid;
-  grid-template-columns: minmax(25%, 20dvw) 1fr;
+  grid-template-columns: minmax(20%, 18dvw) 1fr;
   inline-size: 100%;
   padding-inline: var(--space);
 
@@ -32,7 +44,7 @@
 .book-access {
   &:has(.book-access__switch:checked) {
     .book-access__reader {
-      background-color: var(--color-link);
+      background-color: var(--color-accent);
       cursor: not-allowed;
       pointer-events: none;
 
@@ -45,10 +57,10 @@
 
 .book__cover {
   background-color: var(--color-bg);
-  border-radius: 0.3em;
-  box-shadow: 0 0 0 1px var(--color-subtle-dark);
+  border-radius: var(--radius-plate);
+  box-shadow: 0 0 0 1px var(--color-border);
   margin: auto;
-  transition: background 300ms ease;
+  transition: background var(--dur-micro) var(--ease-out);
 
   @media (min-width: 70ch) {
     max-block-size: var(--cover-height, 75vh);
@@ -113,7 +125,7 @@
   inset: auto 50% calc(var(--block-space) * -1) auto;
   margin-inline-end: calc(var(--btn-size) * -0.5);
   position: absolute;
-  z-index: 1;
+  z-index: var(--z-base);
 }
 
 .book__cover-wrapper {
@@ -145,7 +157,7 @@
 
 .book__cover--remove {
   margin-block-start: calc(var(--block-space) * -1);
-  z-index: 0;
+  z-index: var(--z-base);
 }
 
 .book__form {
@@ -155,8 +167,10 @@
 }
 
 .book__nav {
-  font-size: var(--font-medium-responsive);
-  margin: var(--block-space-double) auto;
+  border-block-start: 1px solid var(--color-rule);
+  font-size: var(--font-small-responsive);
+  margin: var(--block-space-double) auto 0;
+  padding-block-start: var(--block-space);
 
   .btn {
     max-inline-size: 50ch;
@@ -184,19 +198,38 @@
 .book__sidebar {
   inset-block-start: var(--block-space);
   position: sticky;
-  z-index: 1;
+  z-index: var(--z-base);
+}
+
+/* The book's title page: display face, hairline rule beneath the block. */
+.toc__container > h1 {
+  border-block-end: 1px solid var(--color-rule);
+  padding-block-end: var(--space-lg);
+
+  .book__title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  > .txt-large--responsive {
+    color: var(--color-muted);
+    font-family: var(--font-body);
+  }
 }
 
 .book__title {
-  font-weight: 750;
+  font-family: var(--font-display);
+  font-weight: 600;
 }
 
 .book__toolbar {
+  border-block-end: 1px solid var(--color-rule);
   inset-block-start: 0;
-  z-index: 2;
+  z-index: var(--z-sticky);
 }
 
-/* Bookmarks */
+/* Bookmarks — the ochre ribbon that marks your place. */
 .bookmark {
   --icon-size: 1.5em;
 
@@ -226,10 +259,10 @@
 }
 
 .bookmark__link {
-  border-radius: 0.3em;
+  border-radius: var(--radius-plate);
   color: var(--color-link);
   content: "";
   inset: 0;
   position: absolute;
-  z-index: 1;
+  z-index: var(--z-base);
 }

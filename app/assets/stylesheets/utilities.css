@@ -7,10 +7,12 @@
   --block-space-half: calc(var(--block-space) / 2);
   --block-space-double: calc(var(--block-space) * 2);
 
-  --font-small-responsive: clamp(0.8rem, 2cqi, 1rem);
-  --font-medium-responsive: clamp(1rem, 2.5cqi, 1.4rem);
-  --font-large-responsive: clamp(1.3rem, 4cqi, 1.8rem);
-  --font-x-large-responsive: clamp(1.8rem, 5cqi, 3.2rem);
+  /* Reading sizes, clamped on #main's container. Body copy never drops below
+   * 16px; the display rung carries the page titles and section leaves. */
+  --font-small-responsive: clamp(0.8125rem, 1.8cqi, 0.95rem);
+  --font-medium-responsive: clamp(1rem, 2.2cqi, 1.3rem);
+  --font-large-responsive: clamp(1.25rem, 3.4cqi, 1.75rem);
+  --font-x-large-responsive: clamp(1.75rem, 5cqi, 3rem);
 }
 
 /* Text */
@@ -32,7 +34,16 @@
 .txt-ink { color: var(--color-ink); }
 .txt-reversed { color: var(--color-ink-reversed); }
 .txt-negative { color: var(--color-negative); }
-.txt-subtle { color: var(--color-subtle-dark); }
+.txt-subtle { color: var(--color-muted); }
+/* Small-caps label — the printed register for metadata, not a section eyebrow. */
+.txt-caps {
+  font-family: var(--font-body);
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+}
+/* Columns of numbers line up. */
+.txt-figures { font-variant-numeric: tabular-nums; }
 .txt-undecorated { text-decoration: none; }
 .txt-tight-lines { line-height: 1.2; }
 .txt-normal { font-weight: 400; font-style: normal; }
@@ -173,28 +184,10 @@
 .borderless { border: 0; }
 
 /* Border radius */
-.border-radius { border-radius: var(--border-radius, 1em); }
+.border-radius { border-radius: var(--border-radius, var(--radius-card)); }
 
-/* Shadows */
-.shadow {
-  box-shadow:
-    0 0 0 1px oklch(var(--lch-always-black) / 0.02),
-    0 .2em 1.6em -0.8em oklch(var(--lch-always-black) / 0.2),
-    0 .4em 2.4em -1em oklch(var(--lch-always-black) / 0.3),
-    0 .4em .8em -1.2em oklch(var(--lch-always-black) / 0.4),
-    0 .8em 1.2em -1.6em oklch(var(--lch-always-black) / 0.5),
-    0 1.2em 1.6em -2em oklch(var(--lch-always-black) / 0.6);
-
-  @media (prefers-color-scheme: dark) {
-    box-shadow:
-      0 0 0 1px oklch(var(--lch-always-black) / 0.42),
-      0 .2em 1.6em -0.8em oklch(var(--lch-always-black) / 0.6),
-      0 .4em 2.4em -1em oklch(var(--lch-always-black) / 0.7),
-      0 .4em .8em -1.2em oklch(var(--lch-always-black) / 0.8),
-      0 .8em 1.2em -1.6em oklch(var(--lch-always-black) / 0.9),
-      0 1.2em 1.6em -2em oklch(var(--lch-always-black) / 1);
-  }
-}
+/* Depth is a hairline, not a stack. One whisper, never six shadows. */
+.shadow { box-shadow: var(--shadow-whisper); }
 
 /* Seperators */
 .separator {

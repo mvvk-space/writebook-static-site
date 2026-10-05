@@ -1,5 +1,5 @@
 :is(.popover) {
-  --speed: 150ms;
+  --speed: var(--dur-short);
 
   opacity: 0;
   transition:

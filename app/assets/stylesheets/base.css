@@ -1,9 +1,12 @@
+/* Hallmark · genre: editorial · macrostructure: Long Document / Catalogue / Index-First
+ * theme: Newsprint · design-system: design.md · designed-as-app
+ * Base sheet: the reading voice. Colour, type, space and motion names all come
+ * from colors.css — nothing here declares a literal colour or font stack.
+ */
 html, body {
-  --font-sans: system-ui;
-  --font-serif: ui-serif, serif;
-  --font-mono: ui-monospace, monospace;
-  --hover-color: var(--color-subtle-dark);
-  --hover-size: 0.15rem;
+  /* Interaction registers. Hover is a crisper rule, not a glow. */
+  --hover-color: var(--color-ink);
+  --hover-size: 0.1rem;
   --hover-filter: brightness(1);
 
   -moz-osx-font-smoothing: grayscale;
@@ -11,12 +14,26 @@ html, body {
   -webkit-text-size-adjust: none;
   background: var(--color-bg);
   color: var(--color-ink);
-  font-family: var(--font-sans);
-  line-height: 1.4;
+  font-family: var(--font-body);
+  font-size: 100%;
+  font-optical-sizing: auto;
+  line-height: 1.55;
   overflow: unset;
   scroll-behavior: auto;
   text-rendering: optimizeLegibility;
   text-size-adjust: none;
+}
+
+/* Headings are roman, always — emphasis is weight and size, never italic. */
+:where(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--font-display);
+  font-style: normal;
+}
+
+/* Prose emphasis stays in running text where italic belongs. */
+:where(p, li, dd, blockquote) em,
+:where(p, li, dd, blockquote) i {
+  font-style: italic;
 }
 
 a:not([class]) {
@@ -25,6 +42,8 @@ a:not([class]) {
   color: var(--color-link);
   text-decoration: underline;
   text-decoration-skip-ink: auto;
+  text-underline-offset: 0.18em;
+  text-decoration-thickness: max(1px, 0.06em);
 }
 
 :is(a, button, input, textarea, .switch, .toc, .toc__title) {
@@ -33,7 +52,9 @@ a:not([class]) {
   caret-color: var(--color-link);
   text-decoration: none;
   touch-action: manipulation;
-  transition: box-shadow 150ms ease, outline-offset 150ms ease, background-color 150ms ease, opacity 150ms ease, filter 150ms ease;
+  /* Print register: colour shifts land at once; only state changes that move
+   * (nothing here) would animate. The focus ring never animates in. */
+  transition: background-color var(--dur-micro) var(--ease-out);
 
   /* Hover */
   @media (any-hover: hover) {
@@ -45,8 +66,9 @@ a:not([class]) {
   /* Keyboard navigation */
   &:where(:not(:active)):focus-visible {
     outline-width: var(--outline-size);
-    outline-color: var(--outline-color, currentColor);
+    outline-color: var(--outline-color, var(--color-focus));
     outline-offset: var(--outline-offset, calc(var(--outline-size) * 2));
+    outline-style: solid;
   }
 
   &:where(:focus-visible):active {
@@ -58,10 +80,10 @@ a:not([class]) {
     --outline-offset: 0;
   }
 
-  /* Disabled */
+  /* Disabled — three channels: dimmed, cursor, and the native attribute. */
   &:where([disabled]):not(:hover):not(:active) {
     cursor: not-allowed;
-    filter: brightness(0.75);
+    opacity: 0.55;
   }
 }
 
@@ -75,7 +97,7 @@ a:not([class]) {
   list-style: none;
 }
 
-/* Printing */
+/* Printing — this app is already a facsimile of print. */
 @page {
   margin: 1in;
 }

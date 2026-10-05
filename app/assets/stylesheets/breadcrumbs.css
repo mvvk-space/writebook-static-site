@@ -1,5 +1,9 @@
+/* Hallmark · genre: editorial · theme: Newsprint · design-system: design.md
+ * Running-head breadcrumbs. Single-line affordances at every width — the
+ * trail ellipsises, it never wraps.
+ */
 .breadcrumbs {
-  align-items: center;
+  align-items: baseline;
   display: flex;
   gap: var(--inline-space-half);
   margin-inline: auto;
@@ -11,6 +15,30 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  > span:not([class]) {
+    color: var(--color-muted);
+  }
+
+  > strong {
+    font-family: var(--font-display);
+    font-weight: 600;
+  }
+
+  a {
+    color: var(--color-muted);
+    font-family: var(--font-body);
+    font-style: normal;
+    text-decoration: none;
+
+    @media (hover: hover) {
+      &:hover {
+        color: var(--color-ink);
+        text-decoration: underline;
+        text-underline-offset: 0.18em;
+      }
+    }
   }
 
   input {

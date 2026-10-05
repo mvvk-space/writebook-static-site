@@ -1,10 +1,17 @@
+/* Hallmark · genre: editorial · theme: Newsprint · design-system: design.md
+ * Prose voice. The body face reads at a 65ch measure; the display face carries
+ * headings and section leaves. Roman only — emphasis is weight and size.
+ */
 :where(h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6) {
-  font-weight: 800;
+  font-weight: 700;
+  font-style: normal;
   hyphens: auto;
-  letter-spacing: -0.02ch;
-  line-height: 1.1;
+  letter-spacing: -0.015em;
+  line-height: 1.12;
   margin-block: 0;
-  overflow-wrap: break-word;
+  /* Long words break inside the display face rather than pushing the page wide. */
+  overflow-wrap: anywhere;
+  min-width: 0;
   text-wrap: balance;
 }
 
@@ -13,35 +20,38 @@
 }
 
 :is(h1, h2, h3, h4, h5, h6) {
-  margin-block: 0.65em;
+  margin-block: 0.7em;
 }
 
+/* Major-third hierarchy: 1 · 1.25 · 1.5625 · 1.953 · 2.441 · 3.052 */
 :is(h1, .h1) {
-  font-size: 2em;
+  font-size: 2.441em;
 }
 
 :is(h2, .h2) {
-  font-size: 1.5em;
+  font-size: 1.953em;
 }
 
 :is(h3, .h3) {
-  font-size: 1.17em;
+  font-size: 1.5625em;
 }
 
 :is(h4, .h4) {
-  font-size: 1em;
+  font-size: 1.25em;
 }
 
 :is(h5, .h5) {
-  font-size: 0.83em;
+  font-size: 1em;
 }
 
 :is(h6, .h6) {
-  font-size: 0.67em;
+  font-size: 0.8em;
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.1em;
 }
 
 :is(p, ul, ol, dl, blockquote, pre, figure, table, hr) {
-  margin-block: 0.65lh;
+  margin-block: 0.7lh;
   overflow-wrap: break-word;
   text-wrap: pretty;
 }
@@ -65,7 +75,7 @@
   padding: 1em 0 0;
   opacity: var(--opacity);
   overflow: hidden;
-  transition: opacity 300ms ease;
+  transition: opacity var(--dur-micro) var(--ease-out);
   vertical-align: middle;
 
   @media (hover: hover) {
@@ -81,20 +91,22 @@
   }
 }
 
+/* A hairline rule, like the one that closes a column of type. */
 hr {
-  border-color: var(--color-subtle-dark);
+  border-color: var(--color-rule);
   border-style: var(--border-style, solid) none none;
   margin: 2lh auto;
 }
 
 b, strong {
-  font-weight: 700;
+  font-weight: 600;
 }
 
+/* Code is the outlier register — monospace, inset on paper-2. */
 :is(pre, code, .pre, .code) {
-  background-color: var(--color-subtle-light);
-  border: 1px solid var(--color-subtle);
-  border-radius: 0.3em;
+  background-color: var(--color-paper-2);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-input);
   font-family: var(--font-mono);
   font-size: 0.85em;
 }
@@ -109,7 +121,7 @@ code {
 }
 
 :is(pre, .pre) {
-  border-radius: 0.5em;
+  border-radius: var(--radius-card);
   padding: 0.5lh 2ch;
 
   :is(code, .code) {
@@ -122,36 +134,73 @@ code {
 
 p {
   hyphens: auto;
-  letter-spacing: -0.005ch;
+  letter-spacing: 0;
 }
 
+/* Italic survives only as body-copy emphasis, and only in running prose. */
 :is(blockquote, .quote) {
+  border-inline-start: 2px solid var(--color-rule);
   font-style: italic;
-  margin: 0 3ch;
+  margin: 1.4lh 0;
+  padding-inline-start: 2ch;
 
   p {
     hyphens: none;
   }
+
+  p:first-child { margin-block-start: 0; }
+  p:last-child { margin-block-end: 0; }
+}
+
+/* The search hit wears a real marker stroke — the band sits behind the
+ * x-height, not on the baseline, and never covers the ascenders. */
+mark {
+  background-color: transparent;
+  background-image: linear-gradient(
+    180deg,
+    transparent 12%,
+    var(--color-highlight) 12%,
+    var(--color-highlight) 94%,
+    transparent 94%
+  );
+  color: var(--color-ink);
+  padding: 0 0.12em;
 }
 
 table {
-  border: 1px solid var(--color-subtle-dark);
   border-collapse: collapse;
+  border-top: 1px solid var(--color-ink);
+  border-bottom: 1px solid var(--color-ink);
   margin: 1lh 0;
+  max-inline-size: 100%;
+}
+
+/* A table wider than a phone scrolls inside its own box rather than pushing the
+ * document sideways (which would put the whole page into horizontal scroll). */
+@media (max-width: 45rem) {
+  table {
+    display: block;
+    overflow-x: auto;
+  }
 }
 
 th {
-  font-weight: 700;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.08em;
 }
 
 :where(th, td) {
-  border: 1px solid var(--color-subtle-dark);
-  padding: 0.2lh 1ch;
+  border: 0;
+  border-block-end: 1px solid var(--color-rule);
+  font-variant-numeric: tabular-nums;
+  padding: 0.35lh 1ch;
   text-align: start;
 }
 
 :where(th) {
-  border-block-end-width: 3px;
+  border-block-end: 1px solid var(--color-ink);
 }
 
 del {

@@ -1,5 +1,5 @@
 :root {
-  --house-border-radius: 0.5em;
+  --house-border-radius: var(--radius-input);
 }
 
 :where(house-md) {
@@ -33,7 +33,7 @@
     inline-size: auto;
     justify-content: center;
     min-block-size: 2em;
-    transition: background-color 300ms ease;
+    transition: background-color var(--dur-micro) var(--ease-out);
 
     :is(img, svg) {
       -webkit-touch-callout: none;

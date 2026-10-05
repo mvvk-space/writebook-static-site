@@ -1,16 +1,15 @@
+/* Hallmark · genre: editorial · theme: Newsprint · design-system: design.md
+ * Panels are set like a pull-out card: hairline rule, paper surface, no shadow.
+ */
 .panel {
   background-color: var(--color-bg);
-  border: 1px solid var(--panel-border-color, var(--color-subtle));
+  border: 1px solid var(--panel-border-color, var(--color-border));
+  border-radius: var(--panel-border-radius, var(--radius-panel));
   color: var(--color-ink);
-  border-radius: var(--panel-border-radius, 1em);
   inline-size: var(--panel-size, 40ch);
   max-inline-size: calc(100% - var(--inline-space) * 2);
   padding: calc(var(--block-space) * 2);
   position: relative;
-
-  @media (prefers-color-scheme: dark) {
-    --panel-border-color: var(--color-subtle-dark);
-  }
 }
 
 .panel__close {

@@ -1,30 +1,37 @@
+/* Hallmark · genre: editorial · theme: Newsprint · design-system: design.md
+ * Syntax colours live on the same warm press as everything else: a printer's-red
+ * keyword, a plum entity, ochre numerics, muted grey commentary. Every value is
+ * a named token declared in the `.highlight` block — no literals in the rules.
+ */
 .highlight {
-  /* Named color values */
-  --keyword: lch(50.16 68.78 25.97);
-  --entity: lch(39.03 73.26 304.21);
-  --constant: lch(39.68 63.13 279.47);
-  --string: lch(19.22 34.92 275.47);
-  --variable: lch(57.9 81.69 53.33);
-  --comment: lch(47.93 7 254.8);
-  --entity-tag: lch(39.64 68.17 142.85);
-  --markup-heading: lch(39.68 63.13 279.47);
-  --markup-list: lch(40.44 43.36 84.69);
-  --markup-inserted: lch(39.64 68.17 142.85);
-  --markup-deleted: lch(39.64 68.17 31.45);
+  /* Light — the day edition. */
+  --keyword: oklch(46% 0.165 33);
+  --entity: oklch(42% 0.10 320);
+  --constant: oklch(40% 0.08 265);
+  --string: oklch(40% 0.07 155);
+  --variable: oklch(48% 0.10 55);
+  --comment: oklch(52% 0.012 70);
+  --entity-tag: oklch(40% 0.09 155);
+  --storage-modifier-import: oklch(42% 0.08 300);
+  --markup-heading: oklch(40% 0.08 265);
+  --markup-list: oklch(45% 0.08 85);
+  --markup-inserted: oklch(40% 0.09 155);
+  --markup-deleted: oklch(44% 0.185 22);
 
-  /* Redefine named color values for dark mode */
+  /* Night edition — same hues, lightness and chroma moved only. */
   @media (prefers-color-scheme: dark) {
-    --keyword: lch(67.63 58.99 30.64);
-    --entity: lch(75.13 46.73 306.74);
-    --constant: lch(74.9 39.71 255.53);
-    --string: lch(74.9 39.71 255.53);
-    --variable: lch(76.17 61.1 61.97);
-    --comment: lch(60.83 6.66 254.46);
-    --entity-tag: lch(83.65 59.31 141.61);
-    --markup-heading: lch(47.93 71.67 280.72);
-    --markup-list: lch(83.84 57.9 85.03);
-    --markup-inserted: lch(83.65 59.31 141.61);
-    --markup-deleted: lch(73.8% 65 29.18);
+    --keyword: oklch(72% 0.145 40);
+    --entity: oklch(74% 0.11 320);
+    --constant: oklch(74% 0.09 265);
+    --string: oklch(74% 0.09 155);
+    --variable: oklch(78% 0.10 62);
+    --comment: oklch(62% 0.012 72);
+    --entity-tag: oklch(76% 0.10 155);
+    --storage-modifier-import: oklch(72% 0.09 300);
+    --markup-heading: oklch(74% 0.09 265);
+    --markup-list: oklch(80% 0.10 88);
+    --markup-inserted: oklch(76% 0.10 155);
+    --markup-deleted: oklch(70% 0.15 28);
   }
 
   color: var(--color-ink);
@@ -43,7 +50,7 @@
 
   .gd {
     color: var(--markup-deleted);
-    background-color: light-dark(lch(39.64 68.17 31.45 / 0.15), lch(39.64 68.17 31.45 / 0.2));
+    background-color: light-dark(oklch(44% 0.185 22 / 0.12), oklch(70% 0.15 28 / 0.2));
   }
 
   .nb, .nc, .no, .nn {
@@ -56,7 +63,7 @@
 
   .gi {
     color: var(--markup-inserted);
-    background-color: light-dark(lch(49.14 52.75 142.85 / 0.15), lch(83.65 59.31 141.61 / 0.15));
+    background-color: light-dark(oklch(40% 0.09 155 / 0.12), oklch(76% 0.10 155 / 0.15));
   }
 
   .kc, .l, .ld, .m, .mb, .mf, .mh, .mi, .il, .mo, .mx, .sb, .bp, .ne, .nl, .py, .nv, .vc, .vg, .vi, .vm, .o, .ow {

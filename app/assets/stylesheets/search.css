@@ -1,34 +1,39 @@
+/* Hallmark · genre: editorial · theme: Newsprint · design-system: design.md
+ * Search: a printed notice strip for the active highlight, a plain panel for
+ * the results list. `mark` itself is styled in text.css.
+ */
 .search__banner {
   background-color: var(--color-highlight);
-  border-radius: 1.5em;
+  border-radius: var(--radius-btn);
   margin: var(--block-space-half) auto 0;
   padding: 0.3em 0.5em 0.3em 0.9em;
 
   .btn {
-    font-size: 0.5em;
+    font-size: 0.9em;
   }
 }
 
 .search__modal {
   --panel-size: 80ch;
+
+  /* The submit plate stretches to the field's height — one control height per row. */
+  .btn--reversed {
+    align-self: stretch;
+    block-size: auto;
+  }
 }
 
 .search__result {
-  border-radius: 0.5em;
+  border-radius: var(--radius-input);
   padding: 0.5em 0.75em;
 
   @media (hover: hover) {
     --hover-size: 0;
-    --outline-color: var(--color-selected-dark);
+    --outline-color: var(--color-accent);
 
     &:focus-visible,
     &:hover {
       background-color: var(--color-selected);
     }
   }
-}
-
-mark {
-  color: var(--color-ink);
-  background-color: var(--color-highlight);
 }

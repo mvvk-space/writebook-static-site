@@ -1,0 +1,11 @@
+[
+  {
+    "date": "2026-10-05",
+    "macrostructure": "Index-First / Catalogue / Long Document",
+    "theme": "Newsprint",
+    "theme_axes": "light / roman-serif / warm",
+    "enrichment": "none",
+    "scope": "app",
+    "brief": "Writebook (static site generator fork) · reader-facing whole-app skin, editorial/Newsprint"
+  }
+]
