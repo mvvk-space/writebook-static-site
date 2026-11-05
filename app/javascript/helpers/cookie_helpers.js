@@ -1,9 +1,7 @@
 export function setCookie(name, value = "", days = 365) {
-  let expires = ""
-
   const date = new Date()
   date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000)
-  expires = `; expires=${date.toUTCString()}`
+  const expires = `; expires=${date.toUTCString()}`
 
   document.cookie = `${name}=${value}${expires}; path=/`
 }

@@ -1,0 +1,13 @@
+{
+  "name": "writebook",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "eslint .",
+    "test": "node --test test/javascript"
+  },
+  "devDependencies": {
+    "@37signals/eslint-config": "file:/home/mrjohn/Work/tries/2026-11-03-house-style/house-style/eslint-config",
+    "eslint": "^10.14.0"
+  }
+}

@@ -185,13 +185,13 @@ class StaticExportsControllerTest < ActionDispatch::IntegrationTest
     manual = books(:manual)
     assert File.exist?(dir.join(handbook.id.to_s, handbook.slug, "index.html")),
       "the chosen book should have been exported"
-    refute File.exist?(dir.join(manual.id.to_s, manual.slug, "index.html")),
+    assert_not File.exist?(dir.join(manual.id.to_s, manual.slug, "index.html")),
       "the other published book should have been excluded"
 
     # The library menu shows only the chosen book.
     index = File.read(dir.join("index.html"))
     assert_match handbook.title, index
-    refute_match manual.title, index
+    assert_no_match manual.title, index
 
     # Live DB untouched: both books still published after the rollback.
     assert_equal true, Book.find(handbook.id).published
@@ -212,7 +212,7 @@ class StaticExportsControllerTest < ActionDispatch::IntegrationTest
     manual = books(:manual)
     assert File.exist?(dir.join(handbook.id.to_s, handbook.slug, "index.html")),
       "the chosen draft should be exported even though it isn't published"
-    refute File.exist?(dir.join(manual.id.to_s, manual.slug, "index.html")),
+    assert_not File.exist?(dir.join(manual.id.to_s, manual.slug, "index.html")),
       "the other published book should have been hidden during the export"
 
     assert_equal false, Book.find(handbook.id).published,
@@ -267,7 +267,7 @@ class StaticExportsControllerTest < ActionDispatch::IntegrationTest
       "only the chosen book should be in the markdown export"
 
     assert_match handbook.title, @response.body
-    refute_match manual.title, File.read(dir.join("index.md"))
+    assert_no_match manual.title, File.read(dir.join("index.md"))
   end
 
   test "admin download with export_format=markdown and book_id zips just that book's directory" do

@@ -210,7 +210,7 @@ export default class extends Controller {
 
   #setCursor(index, expandSelection) {
     this.#cursorPosition = index
-    this.itemTargets[this.#cursorPosition].scrollIntoView({ block: 'nearest', inline: 'nearest' })
+    this.itemTargets[this.#cursorPosition].scrollIntoView({ block: "nearest", inline: "nearest" })
     this.#setSelection(this.itemTargets[index], expandSelection)
   }
 
@@ -220,7 +220,7 @@ export default class extends Controller {
     if (expandSelection && this.#selection) {
       this.#selection = [
         Math.min(idx, this.#selectionStart),
-        Math.max(idx, this.#selectionEnd),
+        Math.max(idx, this.#selectionEnd)
       ]
     } else {
       this.#selection = [ idx, idx ]
@@ -312,11 +312,11 @@ export default class extends Controller {
       right: rect.right - parent.right,
       width: rect.width,
       height: rect.height
-    };
+    }
   }
 
   #setElementRect(element, rect) {
-    element.style.position = 'absolute'
+    element.style.position = "absolute"
     element.style.left = `${rect.left}px`
     element.style.top = `${rect.top}px`
     element.style.width = `${rect.width}px`
@@ -379,15 +379,11 @@ export default class extends Controller {
   }
 
   get #selectionStart() {
-    if (this.#selection) {
-      return this.#selection[0]
-    }
+    return this.#selection ? this.#selection[0] : undefined
   }
 
   get #selectionEnd() {
-    if (this.#selection) {
-      return this.#selection[1]
-    }
+    return this.#selection ? this.#selection[1] : undefined
   }
 
   get #selectionSize() {

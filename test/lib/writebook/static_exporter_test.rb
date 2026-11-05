@@ -248,7 +248,7 @@ class Writebook::StaticExporterTest < ActiveSupport::TestCase
 
     assert_not File.exist?(@dir.join("index.html"))
     assert_not File.exist?(@dir.join("assets"))
-    refute_empty Dir.glob(@dir.join("**", "*.md").to_s), "expected markdown files in the export"
+    assert_not_empty Dir.glob(@dir.join("**", "*.md").to_s), "expected markdown files in the export"
     assert_empty Dir.glob(@dir.join("**", "*.html").to_s), "markdown export should not carry HTML"
   end
 

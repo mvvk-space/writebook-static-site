@@ -19,17 +19,17 @@ export default class extends Controller {
     }
 
     if (this.filesValue) {
-      data.files = [ await this.#getFileObject()]
+      data.files = [ await this.#getFileObject() ]
     }
 
-    return data;
+    return data
   }
 
   async #getFileObject() {
     const response = await fetch(this.filesValue)
     const blob = await response.blob()
     const randomPrefix = `Writebook_${Math.random().toString(36).slice(2)}`
-    const fileName = `${randomPrefix}.${blob.type.split('/').pop()}`
+    const fileName = `${randomPrefix}.${blob.type.split("/").pop()}`
 
     return new File([ blob ], fileName, { type: blob.type })
   }

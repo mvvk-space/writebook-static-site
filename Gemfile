@@ -37,7 +37,7 @@ group :development, :test do
   gem "debug"
   gem "faker", require: false
   gem "brakeman", require: false
-  gem "rubocop-rails-omakase", require: false
+  gem "rubocop-37signals", github: "razodin137/house-style", require: false
 end
 
 group :development do

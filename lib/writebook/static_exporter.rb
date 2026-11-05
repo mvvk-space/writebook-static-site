@@ -359,7 +359,7 @@ module Writebook
       # whole export is browsable as a tree and the in-app preview has an entry
       # point.
       def library_markdown_index
-        index = String.new(<<~INDEX)
+        index = +<<~INDEX
           # Writebook export
 
           #{Date.today.strftime("%B %-d, %Y")}
