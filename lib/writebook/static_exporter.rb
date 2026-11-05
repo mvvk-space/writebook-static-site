@@ -203,8 +203,16 @@ module Writebook
           response = session.response
           return body_bytes(response) if (200..299).cover?(response.status)
           return nil unless (300..399).cover?(response.status) && response.location
-          target = URI.parse(response.location).request_uri
+          target = redirect_target(response.location)
         end
+      end
+
+      # ActiveStorage's upload redirect is path-only so a shared cache can't pin
+      # it to a forged host. Keep a relative Location relative; the session
+      # resolves it against the configured host.
+      def redirect_target(location)
+        uri = URI.parse(location)
+        uri.absolute? ? uri.request_uri : location
       end
 
       def body_bytes(response)
