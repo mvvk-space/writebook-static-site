@@ -401,8 +401,9 @@ tooling. That is deliberate; an upstream merge must not revert it.
   gone. Run `bin/rubocop`.
 - **JavaScript**: Node 20.19 or newer (the machine has 26), ESLint 10, and
   `@37signals/eslint-config` from the same fork. The clone carries 0.1.0 while
-  npm still serves 0.0.2, so `package.json` installs the config from the local
-  clone with a `file:` spec. `eslint.config.mjs` extends it and declares the
+  npm still serves 0.0.2, so the config is vendored into
+  `vendor/house-style/eslint-config` and installed with a relative `file:` spec
+  that also works in CI. `eslint.config.mjs` extends it and declares the
   `Turbo` global. Run `npm run lint`.
 - **CSS**: there is no SCSS. The app ships plain CSS through Propshaft, so the
   fork's `stylelint-config-scss` does not apply and is not installed. Do not

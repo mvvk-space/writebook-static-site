@@ -39,9 +39,11 @@ description: Reconcile the fork with basecamp/writebook main
      `bundle install` under the Ruby named in `.ruby-version`.
    - **`.rubocop.yml`**: keep
      `inherit_gem: { rubocop-37signals: rubocop.yml }`.
-   - **`package.json`, `package-lock.json`, `eslint.config.mjs`**: keep the
-     fork's. Do not remove the `file:` house-style dependency or the `Turbo`
-     global.
+   - **`package.json`, `package-lock.json`, `eslint.config.mjs`,
+     `vendor/house-style`**: keep the fork's. Do not remove the vendored
+     house-style config, the `file:` dependency, or the `Turbo` global.
+   - **`.github/workflows/ci.yml`**: take upstream's action pins and jobs, and
+     keep the fork's Node setup and `npm run lint` step.
    - **`.gitignore`**: take the union. Keep `/node_modules`.
    - **`.ruby-version`**: take upstream's. Install that Ruby before running the
      checks. If it is unavailable, stop and report it; do not downgrade to get

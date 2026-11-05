@@ -1,0 +1,33 @@
+{
+  "name": "@37signals/eslint-config",
+  "version": "0.1.0",
+  "license": "MIT",
+  "description": "37signals house style for JS",
+  "keywords": [
+    "eslint",
+    "eslint-config",
+    "js"
+  ],
+  "main": "eslint.config.mjs",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/razodin137/house-style.git"
+  },
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "bugs": {
+    "url": "https://github.com/razodin137/house-style/issues"
+  },
+  "homepage": "https://github.com/razodin137/house-style",
+  "dependencies": {
+    "@eslint/js": "^10.0.1",
+    "@stylistic/eslint-plugin": "^5.10.0",
+    "eslint": "^10.14.0",
+    "globals": "^17.14.0"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  }
+}
