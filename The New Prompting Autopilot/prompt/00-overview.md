@@ -477,6 +477,12 @@ Sync twice:
 2. **Final, milestone 16.** Repeat after the features land. This is the
    reconciliation the fork ships with.
 
+Baseline done on 2026-11-05: 28 commits, Ruby 3.4.7 to 3.4.12, and one fork fix.
+Upstream made the upload redirect path-only, so
+`Writebook::StaticExporter#fetch_bytes` now keeps a relative `Location`
+relative instead of calling `request_uri` on a `URI::Generic`. All four checks
+pass. The remaining reconciliation is milestone 16.
+
 Conflict policy:
 
 - **Keep the fork's tooling.** Resolve `Gemfile`, `.rubocop.yml`,
@@ -492,6 +498,11 @@ Conflict policy:
   Ruby just to get a green run.
 - **Re-run the export tests.** Active Storage and sanitizer changes are the most
   likely to break the static export.
+- **Do not carry the schema format bump by accident.** Running `db:prepare`
+  under the Rails 8.2 alpha rewrites `schema.rb` to `ActiveRecord::Schema[8.2]`
+  and sorts columns. Revert that incidental diff and let the next feature
+  migration regenerate it, unless the merge is explicitly meant to adopt the
+  new format.
 - Never merge upstream inside a feature prompt, and never merge into a dirty
   tree.
 

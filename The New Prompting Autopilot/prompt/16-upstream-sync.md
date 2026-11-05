@@ -67,6 +67,13 @@ description: Reconcile the fork with basecamp/writebook main
 
 - Upstream's sanitizer and upload changes are the point of the sync. Do not
   hand-merge around them to keep an older shim.
+- Upstream made the upload redirect path-only. `Writebook::StaticExporter#fetch_bytes`
+  must keep a relative `Location` relative; calling `request_uri` on the
+  resulting `URI::Generic` raises `NoMethodError`. The baseline sync already
+  fixed this once; keep the fix.
+- `db:prepare` under Rails 8.2 rewrites `schema.rb` to the 8.2 format and sorts
+  columns. Revert that incidental diff unless the merge is meant to adopt the
+  new format.
 - The static export reads Active Storage directly. Run
   `test/lib/writebook/static_exporter_test.rb` and
   `test/controllers/static_exports_controller_test.rb` explicitly after the
