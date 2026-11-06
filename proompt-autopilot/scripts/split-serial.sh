@@ -6,16 +6,21 @@
 #   MODEL=... FROM=8 TO=8 ./scripts/split-serial.sh    # one step only
 #   ONLY=11-state,07-remove,08-shell ./scripts/split-serial.sh   # explicit order
 #   COMMIT=0 ./scripts/split-serial.sh                 # leave commits alone
+#   CHECK_CMD='make test' ./scripts/split-serial.sh    # override the detected gate
+#   CHECK_ONLY=1 ./scripts/split-serial.sh             # print the gates and exit
+#   ALLOW_NO_CHECK=1 ./scripts/split-serial.sh         # run without a project check
 #
 # No --continue and no --session: that is what makes every step a fresh agent.
 # The tree must be clean before the loop starts, and every green step is
 # committed, so a bad step is one `git revert` away.
+#
+# The gate is CHECK_CMD, or a gate the repo actually declares: Makefile targets,
+# go.mod, or bin/rails. npm is never assumed; a JS repo sets CHECK_CMD.
 
 set -uo pipefail
 
-# The pack lives inside the application repo at
-# "The New Prompting Autopilot/", so both paths are resolved explicitly:
-# prompts come from the pack, checks and commits happen in the app root.
+RUNNER_VERSION=3
+
 PACK=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 ROOT=$(cd "$PACK/.." && pwd)
 LOGS="$ROOT/.scratch/split"
@@ -24,15 +29,77 @@ FROM=${FROM:-1}
 TO=${TO:-99}
 COMMIT=${COMMIT:-1}
 ONLY=${ONLY:-}
+CHECK_CMD=${CHECK_CMD:-__detect__}
+CHECK_ONLY=${CHECK_ONLY:-0}
+ALLOW_NO_CHECK=${ALLOW_NO_CHECK:-0}
+
+if [ "${1:-}" = "--version" ]; then
+  printf 'split-serial %s\n' "$RUNNER_VERSION"
+  exit 0
+fi
 
 mkdir -p "$LOGS"
 cd "$ROOT" || exit 1
 
-if ! git diff --quiet || ! git diff --cached --quiet; then
+has_make_target() {
+  make -n "$1" >/dev/null 2>&1
+}
+
+detect_check() {
+  if [ "$CHECK_CMD" != "__detect__" ]; then
+    printf '%s\n' "$CHECK_CMD"
+  elif [ -f Makefile ]; then
+    local check="" target
+    for target in test lint; do
+      if has_make_target "$target"; then
+        check="${check:+$check && }make $target"
+      fi
+    done
+    if [ -z "$check" ] && has_make_target check; then
+      check="make check"
+    fi
+    printf '%s\n' "$check"
+  elif [ -f go.mod ]; then
+    printf 'go vet ./... && go test ./...\n'
+  elif [ -f Gemfile ] && [ -f bin/rails ]; then
+    printf 'bin/rails test\n'
+  fi
+}
+
+detect_house() {
+  if [ -f go.mod ]; then
+    printf 'go vet ./...\n'
+  elif [ -f Gemfile ] && [ -f .rubocop.yml ]; then
+    printf 'bundle exec rubocop\n'
+  fi
+}
+
+CHECK=$(detect_check)
+HOUSE=$(detect_house)
+
+if [ -z "$CHECK" ]; then
+  echo "== no project check detected; set CHECK_CMD (a JS repo uses CHECK_CMD='npm run check')" >&2
+  if [ "$CHECK_ONLY" = "1" ] || [ "$ALLOW_NO_CHECK" != "1" ]; then
+    exit 1
+  fi
+else
+  echo "== check: $CHECK"
+fi
+
+if [ -n "$HOUSE" ]; then
+  echo "== house: $HOUSE"
+fi
+
+if [ "$CHECK_ONLY" = "1" ]; then
+  exit 0
+fi
+
+if [ -n "$(git status --porcelain --untracked-files=normal -- . ':(exclude).scratch')" ]; then
   echo "== tree is dirty; commit it before starting" >&2
   exit 1
 fi
 
+shopt -s nullglob
 if [ -n "$ONLY" ]; then
   IFS=',' read -r -a files <<<"$ONLY"
   for i in "${!files[@]}"; do
@@ -40,6 +107,12 @@ if [ -n "$ONLY" ]; then
   done
 else
   files=("$PACK"/prompt/*.md)
+fi
+shopt -u nullglob
+
+if [ ${#files[@]} -eq 0 ]; then
+  echo "== no prompts in $PACK/prompt" >&2
+  exit 1
 fi
 
 for path in "${files[@]}"; do
@@ -52,7 +125,7 @@ for path in "${files[@]}"; do
   fi
 
   if [ ! -f "$path" ]; then
-    echo "== $name: no such command" >&2
+    echo "== $name: no such prompt" >&2
     exit 1
   fi
 
@@ -60,10 +133,8 @@ for path in "${files[@]}"; do
   rm -f "$blocked"
 
   echo "== $name"
-  # Feed the prompt file itself: the pack is not at the repo root, so it must
-  # not depend on a /split command resolving prompt/ from the working directory.
-  opencode run -m "$MODEL" --auto --title "split $name" "$(cat "$path")" 2>&1 \
-    | tee "$LOGS/$name.log"
+  opencode run -m "$MODEL" --auto --title "split $name" \
+    "$(cat "$path")" 2>&1 | tee "$LOGS/$name.log"
   status=${PIPESTATUS[0]}
 
   if [ -f "$blocked" ]; then
@@ -76,17 +147,28 @@ for path in "${files[@]}"; do
     exit 1
   fi
 
-  if ! npm run lint >"$LOGS/$name.lint" 2>&1 || ! npm test >"$LOGS/$name.test" 2>&1; then
-    echo "== $name: lint or JS test failed, see $LOGS" >&2
+  if [ -n "$CHECK" ] && ! eval "$CHECK" >"$LOGS/$name.check" 2>&1; then
+    echo "== $name: check failed ($CHECK), see $LOGS/$name.check" >&2
+    echo "== the work is uncommitted; fix it, then resume with FROM=$step (or ONLY=$name)" >&2
+    exit 1
+  fi
+
+  if [ -n "$HOUSE" ] && ! eval "$HOUSE" >"$LOGS/$name.house" 2>&1; then
+    echo "== $name: house-style check failed ($HOUSE), see $LOGS/$name.house" >&2
+    echo "== the work is uncommitted; fix it, then resume with FROM=$step (or ONLY=$name)" >&2
     exit 1
   fi
 
   git diff --stat >"$LOGS/$name.diff"
 
   if [ "$COMMIT" = "1" ]; then
-    git add -A
-    git commit -q -m "split: $name"
+    git add -A -- . ':(exclude).scratch'
+    if git diff --cached --quiet; then
+      echo "== $name: no changes to commit" >&2
+    else
+      git commit -q -m "split: $name"
+    fi
   fi
 done
 
-echo "== finished"
+echo "== finished (runner $RUNNER_VERSION)"
