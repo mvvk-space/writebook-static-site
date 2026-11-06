@@ -37,8 +37,35 @@
 <% end %>
 
 <% cache [ @books, signed_in? ] do %>
-  <div class="library">
-    <%= render @books %>
-    <%= render "books/new" if signed_in? %>
+  <div class="library library--shelf"
+       data-controller="library"
+       data-action="keydown->library#navigate click->library#select pointerdown->library#pointerStart pointerup->library#pointerEnd pointercancel->library#pointerCancel dragstart->library#dragStart"
+       role="region"
+       aria-roledescription="carousel"
+       aria-label="Book library"
+       tabindex="0">
+    <div class="shelf">
+      <ol class="shelf__track" role="list">
+        <% @books.each do |book| %>
+          <li class="shelf__slot"><%= render book %></li>
+        <% end %>
+
+        <% if signed_in? %>
+          <li class="shelf__slot"><%= render "books/new" %></li>
+        <% end %>
+      </ol>
+    </div>
+
+    <div class="shelf__controls">
+      <button type="button" class="btn btn--circle shelf__nav" data-library-target="previous" data-action="library#previous" aria-label="Previous book">
+        <%= image_tag "arrow-left.svg", aria: { hidden: true }, size: 24 %>
+      </button>
+
+      <p class="shelf__count txt-caps" data-library-target="count" aria-live="polite"></p>
+
+      <button type="button" class="btn btn--circle shelf__nav" data-library-target="next" data-action="library#next" aria-label="Next book">
+        <%= image_tag "arrow-right.svg", aria: { hidden: true }, size: 24 %>
+      </button>
+    </div>
   </div>
 <% end %>

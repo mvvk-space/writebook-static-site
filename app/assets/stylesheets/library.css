@@ -1,6 +1,8 @@
 /* Hallmark · genre: editorial · macrostructure: Index-First
  * theme: Newsprint · design-system: design.md · designed-as-app
  * The library is an index of plates: cover above a hairline rule, caption below.
+ * The shelf adds a turntable for the index: flat covers in perspective until a
+ * book is selected, then a solid object that turns on a slow axis.
  */
 .library {
   --gap: clamp(var(--space-md), 2.5cqi, var(--space-xl));
@@ -49,11 +51,340 @@ body:has(#main.books) #main {
   }
 }
 
-.library__book--empty {
-  display: inline-grid;
-  place-items: center;
+/* --- The shelf ------------------------------------------------------------
+ * A Wii-era turntable, cut from paper. The markup is a plain list; until the
+ * controller marks it ready this stays the grid above. Once ready, every book
+ * becomes an absolutely centred plate, the selected one a six-sided object.
+ */
+.library--shelf {
+  --shelf-width: clamp(6.4rem, 14cqi, 10rem);
+  --shelf-height: calc(var(--shelf-width) * 1.6);
+  --shelf-depth: calc(var(--shelf-width) * 0.15);
+  --shelf-turn: 26s;
+  --shelf-enter: 760ms;
+  --shelf-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --shelf-face: var(--color-paper);
+  --shelf-edge: var(--color-paper-2);
+}
 
-  * {
-    grid-area: 1 / 1;
-  }
+/* No JS: the wrappers dissolve so the figures fall back into the grid. */
+.library--shelf .shelf,
+.library--shelf .shelf__track,
+.library--shelf .shelf__slot {
+  display: contents;
+}
+
+.library--shelf .shelf__controls {
+  display: none;
+}
+
+/* A flat front cover before the turntable starts. */
+.library--shelf:not(.library--ready) .shelf__object {
+  aspect-ratio: 5 / 8;
+  display: block;
+  inline-size: 100%;
+  position: relative;
+}
+
+.library--shelf:not(.library--ready) .shelf__face--front {
+  block-size: 100%;
+  display: block;
+  position: relative;
+}
+
+.library--shelf:not(.library--ready) .shelf__face:not(.shelf__face--front) {
+  display: none;
+}
+
+.shelf__link-position {
+  block-size: 100%;
+  display: block;
+  inline-size: 100%;
+  position: relative;
+  transform-origin: 50% 50%;
+  transform-style: preserve-3d;
+}
+
+.shelf__object {
+  block-size: 100%;
+  display: block;
+  inline-size: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  user-select: none;
+}
+
+.shelf__face {
+  backface-visibility: hidden;
+  inset: 0;
+  position: absolute;
+}
+
+.shelf__face--front,
+.shelf__face--back {
+  background-color: var(--shelf-face);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-plate);
+  overflow: hidden;
+}
+
+.shelf__face--front {
+  transform: translateZ(calc(var(--shelf-depth) / 2));
+}
+
+.shelf__face--back {
+  background-color: var(--shelf-edge);
+  transform: rotateY(180deg) translateZ(calc(var(--shelf-depth) / 2));
+}
+
+.shelf__face--spine,
+.shelf__face--pages {
+  inline-size: var(--shelf-depth);
+  left: calc(50% - (var(--shelf-depth) / 2));
+}
+
+.shelf__face--spine {
+  background-color: var(--shelf-edge);
+  transform: rotateY(-90deg) translateZ(calc(var(--shelf-width) / 2));
+}
+
+.shelf__face--pages {
+  background-color: var(--shelf-face);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 2px,
+    color-mix(in oklch, var(--color-rule) 55%, transparent) 2px 3px
+  );
+  transform: rotateY(90deg) translateZ(calc(var(--shelf-width) / 2));
+}
+
+.shelf__face--top,
+.shelf__face--bottom {
+  block-size: var(--shelf-depth);
+  top: calc(50% - (var(--shelf-depth) / 2));
+}
+
+.shelf__face--top {
+  background-color: var(--shelf-face);
+  transform: rotateX(90deg) translateZ(calc(var(--shelf-height) / 2));
+}
+
+.shelf__face--bottom {
+  background-color: var(--shelf-face);
+  transform: rotateX(-90deg) translateZ(calc(var(--shelf-height) / 2));
+}
+
+.shelf__face--front .book__cover {
+  block-size: 100%;
+  border-radius: 0;
+  box-shadow: none;
+  inline-size: 100%;
+  margin: 0;
+  object-fit: cover;
+}
+
+.shelf__face--front .book__cover-wrapper {
+  block-size: 100%;
+  display: grid;
+  inline-size: 100%;
+  margin: 0;
+}
+
+/* Book cloth, for the covers drawn in the app instead of uploaded. */
+.shelf__book.theme--black { --shelf-edge: var(--theme-color--black); }
+.shelf__book.theme--blue { --shelf-edge: var(--theme-color--blue); }
+.shelf__book.theme--green { --shelf-edge: var(--theme-color--green); }
+.shelf__book.theme--magenta { --shelf-edge: var(--theme-color--magenta); }
+.shelf__book.theme--orange { --shelf-edge: var(--theme-color--orange); }
+.shelf__book.theme--violet { --shelf-edge: var(--theme-color--violet); }
+.shelf__book.theme--white { --shelf-edge: var(--theme-color--white); }
+
+.library--shelf.library--ready {
+  display: block;
+  overflow: clip;
+  padding-block: clamp(var(--space-lg), 6cqi, var(--space-3xl));
+  padding-inline: clamp(var(--space-md), 5cqi, var(--space-2xl));
+  position: relative;
+  touch-action: pan-y;
+}
+
+.library--shelf.library--ready .shelf {
+  block-size: calc(var(--shelf-height) * 2.35);
+  display: block;
+  inline-size: 100%;
+  perspective: 1500px;
+  perspective-origin: 50% 46%;
+  position: relative;
+  touch-action: pan-y;
+  transform-style: preserve-3d;
+}
+
+/* The pool of shadow the selected book floats over. */
+.library--shelf.library--ready .shelf::after {
+  background: radial-gradient(
+    ellipse at center,
+    oklch(var(--lch-always-black) / 0.14),
+    transparent 68%
+  );
+  block-size: 8%;
+  content: "";
+  inline-size: min(40rem, 55%);
+  inset: auto auto 8% 50%;
+  opacity: 0.55;
+  pointer-events: none;
+  position: absolute;
+  transform: translateX(-50%);
+}
+
+.library--shelf.library--ready .shelf,
+.library--shelf.library--ready .shelf__track {
+  pointer-events: none;
+}
+
+.library--shelf.library--ready .shelf__track {
+  block-size: 100%;
+  display: block;
+  inline-size: 100%;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  transform-style: preserve-3d;
+}
+
+.library--shelf.library--ready .shelf__slot {
+  display: block;
+  position: static;
+}
+
+.library--shelf.library--ready .shelf__book,
+.library--shelf.library--ready .shelf__book a {
+  touch-action: pan-y;
+}
+
+.library--shelf.library--ready .shelf__book {
+  block-size: var(--shelf-height);
+  inline-size: var(--shelf-width);
+  left: 50%;
+  margin: 0;
+  pointer-events: auto;
+  position: absolute;
+  top: 50%;
+  transform: translate3d(-50%, -50%, 0);
+  transform-origin: 50% 50%;
+  transform-style: preserve-3d;
+  transition: transform 680ms var(--shelf-ease);
+  will-change: transform;
+}
+
+.library--shelf.library--ready .shelf__link-position {
+  transition: transform 680ms var(--shelf-ease);
+}
+
+/* The selected book: one fast turn into place, then a slow continuous turn. */
+.library--shelf.library--ready .shelf__book.is-selected .shelf__object {
+  animation:
+    shelf-arrive var(--shelf-enter) var(--shelf-ease) both,
+    shelf-turn var(--shelf-turn) linear var(--shelf-enter) infinite;
+  will-change: transform;
+}
+
+.library--shelf.library--ready .shelf__book .bookmark__link {
+  transform: translateZ(calc(var(--shelf-depth) + 2px));
+}
+
+.library--shelf.library--ready .shelf__book .bookmark {
+  transform: translateZ(calc((var(--shelf-depth) / 2) + 1px));
+}
+
+.library--shelf.library--ready .shelf__book h2 {
+  border-block-start: 1px solid var(--color-rule);
+  inline-size: max-content;
+  inset-block-start: calc(100% + (var(--shelf-height) * 0.2) + var(--space-sm));
+  left: 50%;
+  margin: 0;
+  max-inline-size: 24ch;
+  opacity: 0;
+  padding-block-start: var(--space-xs);
+  position: absolute;
+  text-align: center;
+  transform: translateX(-50%);
+  transition: opacity var(--dur-short) var(--ease-out);
+  visibility: hidden;
+}
+
+.library--shelf.library--ready .shelf__book.is-selected h2 {
+  opacity: 1;
+  visibility: visible;
+}
+
+.library--shelf.library--ready .shelf__book.is-selected .shelf__link-position::after {
+  background: radial-gradient(
+    ellipse at center,
+    oklch(var(--lch-always-black) / 0.22),
+    transparent 70%
+  );
+  block-size: 0.9rem;
+  content: "";
+  filter: blur(5px);
+  inline-size: 78%;
+  inset: auto auto -1.1rem 50%;
+  pointer-events: none;
+  position: absolute;
+  transform: translateX(-50%);
+}
+
+.shelf__new {
+  aspect-ratio: 5 / 8;
+  display: block;
+  inline-size: 100%;
+  position: relative;
+}
+
+.shelf__new .book__cover {
+  block-size: 100%;
+  inline-size: 100%;
+  margin: 0;
+  object-fit: cover;
+}
+
+.shelf__new .btn {
+  inset: 50% auto auto 50%;
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+
+.library--shelf.library--ready .shelf__controls {
+  align-items: center;
+  display: flex;
+  gap: var(--space-lg);
+  justify-content: center;
+  margin-block-start: var(--space-md);
+  position: relative;
+  z-index: var(--z-raised);
+}
+
+.library--shelf.library--ready .shelf__nav {
+  background-color: var(--color-paper);
+  box-shadow: var(--shadow-whisper);
+}
+
+.shelf__count {
+  color: var(--color-muted);
+  font-family: var(--font-mono);
+  font-size: var(--font-small-responsive);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+  margin: 0;
+  min-inline-size: 6ch;
+  text-align: center;
+}
+
+@keyframes shelf-arrive {
+  from { transform: rotateY(-360deg); }
+  to { transform: rotateY(0deg); }
+}
+
+@keyframes shelf-turn {
+  to { transform: rotateY(360deg); }
 }

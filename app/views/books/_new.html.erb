@@ -1,12 +1,18 @@
-<figure class="library__book position-relative">
-  <div class="library__book--empty center">
-    <%= image_tag "empty-cover.png", alt: "Book cover", class: "book__cover" %>
-    <span class="btn btn--positive center">
-      <%= image_tag "add.svg", aria: { hidden: true }, size: 24 %>
-      <span class="for-screen-reader"></span>
+<figure class="library__book shelf__book"
+        data-library-target="book"
+        data-library-href="<%= new_book_path %>"
+        data-library-label="New book">
+  <div class="shelf__link-position">
+    <span class="shelf__new">
+      <%= image_tag "empty-cover.png", alt: "Book cover", class: "book__cover" %>
+      <span class="btn btn--positive center">
+        <%= image_tag "add.svg", aria: { hidden: true }, size: 24 %>
+        <span class="for-screen-reader">Create a new book</span>
+      </span>
     </span>
+
+    <%= link_to new_book_path, class: "bookmark__link" do %>
+      <span class="for-screen-reader">Create a new book</span>
+    <% end %>
   </div>
-  <%= link_to new_book_path, class: "bookmark__link" do %>
-    <span class="for-screen-reader">Create a new book</span>
-  <% end %>
 </figure>
