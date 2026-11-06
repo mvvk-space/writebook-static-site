@@ -39,3 +39,7 @@
 
 # Ignore exported zipfiles
 /*.zip
+
+# Local prompt-autopilot workspace and throwaway artifacts.
+/The New Prompting Autopilot/
+/.scratch/
