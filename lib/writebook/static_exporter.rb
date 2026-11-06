@@ -33,7 +33,7 @@ module Writebook
   # archive. No other assets or post-processing: the app's format.md routes are
   # written verbatim.
   class StaticExporter
-    FORMATS = %w[html markdown].freeze
+    FORMATS = %w[html markdown epub].freeze
     DEFAULT_FORMAT = "html"
 
     STATIC_ROOT_FILES = %w[favicon.svg favicon.png app-icon.png app-icon-192.png robots.txt].freeze
@@ -148,6 +148,8 @@ module Writebook
 
       if markdown?
         render_markdown_library
+      elsif epub?
+        render_epub_library
       else
         render_library
         mirror_precompiled_assets
@@ -351,6 +353,32 @@ module Writebook
         log "Wrote #{@book_count} #{'book'.pluralize(@book_count)}, #{@leaf_count} markdown #{'file'.pluralize(@leaf_count)}"
       end
 
+      def render_epub_library
+        log "Rendering EPUB export"
+        @exported_books = []
+        @book_epubs = {}
+        used_names = []
+
+        books = Book.published.ordered.to_a
+        @book_count = books.size
+        @leaf_count = 0
+
+        books.each do |book|
+          filename = "#{unique_name(book.slug, used_names)}.epub"
+          result = Writebook::EpubExporter.new(book, @output_dir.join(filename), fetcher: method(:fetch_bytes)).call
+
+          @book_epubs[book.id.to_s] = filename
+          @exported_books << book.id
+          @leaf_count += result.chapters
+          @resource_ok += result.images
+          @resource_fail += result.failures
+          log "Book ##{book.id} #{book.title.inspect} -> #{filename}"
+        end
+
+        @output_dir.join("_book_epubs.json").write(JSON.generate(@book_epubs))
+        log "Wrote #{@book_count} #{'EPUB'.pluralize(@book_count)}, #{@leaf_count} #{'chapter'.pluralize(@leaf_count)}"
+      end
+
       # The generated per-book table of contents: one bullet per file in the
       # book's directory, so a visitor can read the book a page at a time or
       # whole. Doesn't exist as a live route.
@@ -521,7 +549,13 @@ module Writebook
       end
 
       def manifest_text
-        header = markdown? ? "Writebook markdown export" : "Writebook static export"
+        header = if markdown?
+          "Writebook markdown export"
+        elsif epub?
+          "Writebook EPUB export"
+        else
+          "Writebook static export"
+        end
         <<~MSG
           #{header}
           ----------------------
@@ -541,6 +575,10 @@ module Writebook
 
       def markdown?
         @format == "markdown"
+      end
+
+      def epub?
+        @format == "epub"
       end
 
       def log(message)

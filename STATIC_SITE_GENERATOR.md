@@ -12,7 +12,9 @@ as its own flat directory of front-matter `.md` files — the whole book plus on
 per leaf, numbered in reading order — joined by a generated `index.md`, with
 every in-body image copied in and linked relatively. Each book downloads as its
 own `.zip` — for committing a book to a repo, feeding a docs workspace, or
-reading in any markdown viewer.
+reading in any markdown viewer. And it can export **one EPUB per book**: every
+leaf as a chapter, a linked table of contents, the cover, and all images embedded
+in a standards-based e-book.
 
 It's a generic feature for the OSS Writebook project — intended to be PR-able
 upstream to Basecamp — and is not coupled to any one instance. Any operator can
@@ -24,6 +26,7 @@ export their own books from their own Writebook.
 | --- | --- | --- |
 | **HTML** (default) | The full self-contained site: every page rendered, all CSS/JS assets, root files, PWA manifest, and every referenced image blob copied in. | Hosting a read-only replica of your library anywhere. |
 | **Markdown** | One flat directory per book: the whole book and one front-matter `.md` file per leaf — numbered by its position in the book (`1-intro.md`, `2-setup.md`, …) so the directory reads in order — plus a generated per-book `index.md` linking them, and every in-body upload image copied into the directory with its link rewritten to the bare filename. Each book is zipped on its own. | Committing a book to a repository, importing into a docs workspace (Obsidian, MkDocs, …), LLM pipelines, or archiving plain text. |
+| **EPUB** | One standards-based `.epub` file per book: every leaf as a chapter, a linked table of contents, the cover, and every in-body and picture image embedded. | Reading on Apple Books, Calibre, Kobo, Kindle, tablets, and phones, or sharing a self-contained e-book. |
 
 Both formats share the same scoping: all published books by default, `STATIC_ALL=1`
 (or the drafts checkbox) to include drafts, or a single book by id — always inside
@@ -42,7 +45,7 @@ the library page header. It opens a landing page with a selector:
   hosting one book at a time. The chosen book is exported whether or not it's
   published; the drafts checkbox only applies to the whole-library export. The
   generated site's library menu lists just that one book.
-- **Export format** — **HTML site** (default) or **Markdown only**.
+- **Export format** — **HTML site** (default), **Markdown only**, or **EPUB**.
 
 Clicking **Generate static site** runs the export into `tmp/static-site` and
 shows a result page with the counts and **what to do next**:
@@ -57,9 +60,10 @@ shows a result page with the counts and **what to do next**:
 From there, **Download .zip** streams the generated export — for HTML, the whole
 site as a single archive (`writebook-static-site.zip`, or `writebook-<slug>.zip`
 for one book); for markdown, **one `.zip` per book** (`writebook-<slug>-markdown.zip`),
-each holding just that book's flat directory. The preview button serves the export
-from inside the app under `/static-site/` (the rendered site for HTML; `index.md`
-for markdown).
+each holding just that book's flat directory; for EPUB, **one `.epub` per book**
+(`writebook-<slug>.epub`). The preview button serves the export from inside the app
+under `/static-site/` (the rendered site for HTML; `index.md` for markdown). EPUB
+files are downloaded and opened in an e-reader.
 
 The export runs synchronously. Writebook runs no background jobs, and a
 published-only export takes seconds. For very large libraries the result page
@@ -86,6 +90,10 @@ STATIC_ALL=1 bin/rails static:generate
 # Markdown-only export (same scoping flags):
 bin/rails static:markdown
 STATIC_ALL=1 bin/rails static:markdown[path/to/output]
+
+# One EPUB per book (same scoping flags):
+bin/rails static:epub
+STATIC_ALL=1 bin/rails static:epub[path/to/output]
 ```
 
 `STATIC_ALL=1` temporarily flips `published: true` inside a rolled-back
@@ -107,6 +115,8 @@ modified.
   (`/rails/active_storage/…`) and in-body uploads (`/u/<slug>`).
 - The per-book table-of-contents sidebar, externalized once per book and loaded
   with a tiny inline fetch (see Design below).
+- For EPUB: one `.epub` per book with every leaf as a chapter, a linked table of
+  contents, the cover, and all in-body and picture images embedded.
 
 ## What's NOT included
 
@@ -147,8 +157,9 @@ The two faithful post-processing additions:
 
 | Path | Purpose |
 | --- | --- |
-| `lib/writebook/static_exporter.rb` | `Writebook::StaticExporter` — the renderer (HTML default, `format: "markdown"` for the markdown-only export) |
-| `lib/tasks/static.rake` | `bin/rails static:generate` and `bin/rails static:markdown` |
+| `lib/writebook/static_exporter.rb` | `Writebook::StaticExporter` — the renderer (HTML default, `format: "markdown"` for markdown, `format: "epub"` for EPUB) |
+| `lib/writebook/epub_exporter.rb` | `Writebook::EpubExporter` — builds one EPUB 3 file for a book, embedding chapters, TOC, cover, and images |
+| `lib/tasks/static.rake` | `bin/rails static:generate`, `bin/rails static:markdown`, and `bin/rails static:epub` |
 | `app/controllers/static_exports_controller.rb` | Admin UI action (`show` landing, `create` runs the export; `before_action :ensure_can_administer`) |
 | `app/views/static_exports/show.html.erb` | Landing page with the Generate button |
 | `app/views/static_exports/create.html.erb` | Result page with counts + next steps |
@@ -163,7 +174,7 @@ The two faithful post-processing additions:
 bin/rails test
 ```
 
-All green: 171 runs, 597 assertions, 0 failures.
+All green: 357 runs, 1641 assertions, 0 failures.
 
 ## Credits
 

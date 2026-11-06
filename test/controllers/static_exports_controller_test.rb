@@ -325,6 +325,80 @@ class StaticExportsControllerTest < ActionDispatch::IntegrationTest
     assert File.exist?(dir.join("index.md")), "the requested markdown export should have been regenerated"
   end
 
+  test "admin show offers the EPUB export format" do
+    sign_in :david
+
+    get static_export_url
+    assert_response :ok
+    assert_match %(name="export_format"), @response.body
+    assert_match %(value="epub"), @response.body
+    assert_match "EPUB", @response.body
+  end
+
+  test "admin create with export_format=epub writes one EPUB per book and reports it" do
+    sign_in :david
+
+    post static_export_url, params: { export_format: "epub" }
+    assert_redirected_to static_export_result_url
+    follow_redirect!
+    assert_response :ok
+
+    dir = static_dir
+    book = books(:handbook)
+    assert File.exist?(dir.join("#{book.slug}.epub")), "expected the EPUB export"
+
+    require "zip"
+    Zip::File.open(dir.join("#{book.slug}.epub")) do |zip|
+      assert_equal "mimetype", zip.entries.first.name
+      assert zip.find_entry("OEBPS/content.opf")
+    end
+
+    assert_match "Your EPUB export is ready", @response.body
+    assert_match books(:handbook).title, @response.body
+    assert_match %r{/static_export/download\?book_id=#{book.id}&amp;export_format=epub}, @response.body
+  end
+
+  test "admin create with export_format=epub exports a single book by id" do
+    sign_in :david
+
+    post static_export_url, params: { export_format: "epub", book_id: books(:handbook).id }
+    follow_redirect!
+    assert_response :ok
+
+    dir = static_dir
+    handbook = books(:handbook)
+    manual = books(:manual)
+    assert File.exist?(dir.join("#{handbook.slug}.epub"))
+    assert_not File.exist?(dir.join("#{manual.slug}.epub")),
+      "only the chosen book should be in the EPUB export"
+
+    assert_match handbook.title, @response.body
+    assert_match "Download .epub", @response.body
+  end
+
+  test "admin download with export_format=epub sends the book's EPUB" do
+    sign_in :david
+    books(:handbook).update!(published: true)
+
+    get static_export_download_path(book_id: books(:handbook).id, export_format: "epub")
+    assert_response :ok
+    assert_match %r{application/epub\+zip}, response.content_type.to_s
+    assert_match "writebook-#{books(:handbook).slug}.epub",
+                 response.headers["Content-Disposition"].to_s
+    assert_match "PK", response.body
+  end
+
+  test "admin download with export_format=epub and no book sends the single EPUB" do
+    sign_in :david
+    books(:handbook).update!(published: true)
+
+    get static_export_download_url(export_format: "epub")
+    assert_response :ok
+    assert_match %r{application/epub\+zip}, response.content_type.to_s
+    assert_match "writebook-#{books(:handbook).slug}.epub",
+                 response.headers["Content-Disposition"].to_s
+  end
+
   test "an unknown export_format falls back to the html export" do
     sign_in :david
 

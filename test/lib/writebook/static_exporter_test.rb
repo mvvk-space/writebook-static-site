@@ -262,4 +262,22 @@ class Writebook::StaticExporterTest < ActiveSupport::TestCase
     assert_empty Dir.glob(@dir.join("**", "*.md").to_s) - [ @dir.join("index.md").to_s ],
       "unpublished books must not be written by the markdown export"
   end
+
+  test "epub export writes one epub per book and records the filename map" do
+    book = books(:handbook)
+    duplicate = Book.create!(title: "Handbook", published: true)
+
+    result = Writebook::StaticExporter.new(@dir, host: "example.com", format: "epub").call
+
+    assert File.exist?(@dir.join("#{book.slug}.epub"))
+    assert File.exist?(@dir.join("#{book.slug}-2.epub")), "same-titled books should get distinct EPUB files"
+
+    map = JSON.parse(@dir.join("_book_epubs.json").read)
+    assert_equal "#{book.slug}.epub", map[book.id.to_s]
+    assert_equal "#{book.slug}-2.epub", map[duplicate.id.to_s]
+
+    assert_equal "epub", result.format
+    assert_equal 2, result.books
+    assert_equal [ book.id, duplicate.id ].sort, result.exported_books.sort
+  end
 end

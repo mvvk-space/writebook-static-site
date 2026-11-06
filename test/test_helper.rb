@@ -9,6 +9,10 @@ require "rails/test_help"
 # default tmp/static-site (see StaticExportsController#static_dir).
 ActiveSupport::TestCase.parallelize_setup do |worker|
   Rails.application.config.x.static_export_root = Rails.root.join("tmp/static-site-test-#{worker}")
+  ActiveStorage::Blob.services = ActiveStorage::Service::Registry.new(
+    test: { service: "Disk", root: Rails.root.join("tmp/storage-test-#{worker}") }
+  )
+  ActiveStorage::Blob.service = ActiveStorage::Blob.services.fetch(:test)
 end
 
 module ActiveSupport

@@ -34,4 +34,21 @@ namespace :static do
       Writebook::StaticExporter.new(dir, verbose: true, format: "markdown").call
     end
   end
+
+  desc "Generate one EPUB per published book into DIR (default: tmp/static-site). " \
+       "Each EPUB carries the book's pages as chapters, a linked table of contents, " \
+       "and its cover and images. STATIC_ALL=1 to include unpublished books."
+  task :epub, [ :dir ] => :environment do |_task, args|
+    dir = args[:dir] || "tmp/static-site"
+
+    if ENV["STATIC_ALL"] == "1"
+      Book.transaction do
+        Book.where(published: [ false, nil ]).update_all(published: true)
+        Writebook::StaticExporter.new(dir, verbose: true, format: "epub").call
+        raise ActiveRecord::Rollback
+      end
+    else
+      Writebook::StaticExporter.new(dir, verbose: true, format: "epub").call
+    end
+  end
 end

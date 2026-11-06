@@ -44,23 +44,28 @@ class BookTest < ActiveSupport::TestCase
   end
 
   test "destroying a book removes superseded revisions along with their content and files" do
-    page = leaves(:welcome_page).page
+    book = Book.create!(title: "Doomed")
+
+    page_leaf = book.press Page.new(body: "Original body"), title: "Page"
+    page = page_leaf.page
     page.body.uploads.attach io: file_fixture("pixel.bmp").open, filename: "pixel.bmp", content_type: "image/bmp"
     upload_blob = page.body.uploads.blobs.sole
-    leaves(:welcome_page).edit leafable_params: { body: "Revised body" }
+    page_leaf.edit leafable_params: { body: "Revised body" }
 
-    picture = leaves(:reading_picture).picture
+    picture_leaf = book.press Picture.new(caption: "Original caption"), title: "Picture"
+    picture = picture_leaf.picture
+    picture.image.attach io: file_fixture("reading.webp").open, filename: "reading.webp", content_type: "image/webp"
     image_blob = picture.image.blob
-    leaves(:reading_picture).edit leafable_params: { caption: "Revised caption" }
+    picture_leaf.edit leafable_params: { caption: "Revised caption" }
 
-    assert_equal page, leaves(:welcome_page).edits.revision.sole.leafable
-    assert_equal picture, leaves(:reading_picture).edits.revision.sole.leafable
+    assert_equal page, page_leaf.edits.revision.sole.leafable
+    assert_equal picture, picture_leaf.edits.revision.sole.leafable
 
     perform_enqueued_jobs do
-      books(:handbook).destroy
+      book.destroy
     end
 
-    assert_not Edit.exists?(leaf_id: leaves(:welcome_page, :reading_picture).map(&:id))
+    assert_not Edit.exists?(leaf_id: [ page_leaf.id, picture_leaf.id ])
     assert_not Page.exists?(page.id)
     assert_not ActionText::Markdown.exists?(record: page)
     assert_not Picture.exists?(picture.id)

@@ -99,7 +99,30 @@ class StaticExportsController < ApplicationController
     export_format = export_format_param
     book = Book.find_by(id: params[:book_id].presence)
     ensure_static_site_generated(book: book, format: export_format)
-    if book && export_format == "markdown"
+    if export_format == "epub"
+      if book
+        filename = exported_book_epub(book)
+        path = static_dir.join(filename)
+        unless path.exist?
+          generate(book: book, format: export_format)
+          filename = exported_book_epub(book)
+          path = static_dir.join(filename)
+        end
+        send_file path, filename: "writebook-#{book.slug}.epub",
+                  type: "application/epub+zip", disposition: "attachment"
+      else
+        epubs = exported_epubs
+        if epubs.empty?
+          head :not_found
+        elsif epubs.one?
+          send_file epubs.first, filename: "writebook-#{File.basename(epubs.first)}",
+                    type: "application/epub+zip", disposition: "attachment"
+        else
+          send_file zip_epubs(epubs), filename: "writebook-epub.zip",
+                    type: "application/zip", disposition: "attachment"
+        end
+      end
+    elsif book && export_format == "markdown"
       dir = exported_book_dir(book)
       unless static_dir.join(dir).directory?
         # The tree exists but this book's directory doesn't (pruned mid-preview,
@@ -205,7 +228,12 @@ class StaticExportsController < ApplicationController
     # markdown export, so a stale directory of the other format triggers a
     # regeneration rather than serving the wrong flavor.
     def ensure_static_site_generated(book: nil, format: Writebook::StaticExporter::DEFAULT_FORMAT)
-      sentinel = format == "markdown" ? "index.md" : "index.html"
+      sentinel = case format
+      when "markdown" then "index.md"
+      when "epub" then "_book_epubs.json"
+      else "index.html"
+      end
+
       generate(book: book, format: format) unless static_dir.join(sentinel).exist?
     end
 
@@ -236,6 +264,33 @@ class StaticExportsController < ApplicationController
       map[book.id.to_s].presence || book.slug
     end
 
+    def exported_book_epub(book)
+      map_file = static_dir.join("_book_epubs.json")
+      map = map_file.exist? ? JSON.parse(map_file.read) : {}
+      map[book.id.to_s].presence || "#{book.slug}.epub"
+    end
+
+    def exported_epubs
+      Dir.glob(static_dir.join("*.epub").to_s).sort
+    end
+
+    def zip_epubs(paths)
+      require "zip"
+
+      zip_path = unique_zip_path("writebook-epub")
+      FileUtils.rm_f(zip_path)
+
+      Zip::File.open(zip_path, create: true) do |zip|
+        paths.each { |path| zip.add(File.basename(path), path) }
+      end
+
+      zip_path
+    end
+
+    def unique_zip_path(prefix)
+      Rails.root.join("tmp", "#{prefix}-#{Process.pid}-#{SecureRandom.hex(6)}.zip")
+    end
+
     # Zips the generated export. By default the whole tree lands under
     # static-site/ in the archive; pass +scope:+ to zip just one subdirectory,
     # with the archive entries under that directory's own name -- the markdown
@@ -243,7 +298,7 @@ class StaticExportsController < ApplicationController
     def zip_static_site(scope: nil)
       require "zip"
 
-      zip_path = Rails.root.join("tmp/writebook-static-site.zip")
+      zip_path = unique_zip_path("writebook-static-site")
       FileUtils.rm_f(zip_path)
       root = scope ? static_dir.join(scope) : static_dir
       prefix = scope || "static-site"
