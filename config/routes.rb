@@ -29,6 +29,9 @@ Rails.application.routes.draw do
   get "/static_export/download", to: "static_exports#download", as: :static_export_download
   get "/static-site/(*path)", to: "static_exports#preview", as: :static_site_preview, defaults: { path: "index.html" }
 
+  get "books/order", to: "books/orders#show", as: :books_order
+  post "books/moves", to: "books/moves#create", as: :books_moves
+
   resources :books, except: %i[ index show ] do
     resource :publication, controller: "books/publications", only: %i[ show edit update ]
     resource :bookmark, controller: "books/bookmarks", only: :show

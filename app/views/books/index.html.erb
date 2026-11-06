@@ -12,6 +12,11 @@
 
     <% if Current.user %>
       <% if Current.user.can_administer? %>
+        <%= link_to books_order_path, class: "btn" do %>
+          <%= image_tag "rearrange.svg", aria: { hidden: true }, size: 24 %>
+          <span class="for-screen-reader">Reorder books</span>
+        <% end %>
+
         <%= link_to static_export_path, class: "btn" do %>
           <%= image_tag "download.svg", aria: { hidden: true }, size: 24 %>
           <span class="for-screen-reader">Export to static site</span>

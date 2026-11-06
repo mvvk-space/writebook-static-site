@@ -1,7 +1,9 @@
 handbook:
   title: Handbook
   slug: handbook
+  position_score: 1
 
 manual:
   title: Manual
   slug: manual
+  position_score: 2

@@ -1,0 +1,28 @@
+<figure class="library__book arrangement__item <%= "theme--#{book.theme}" unless book.cover.attached? %>" data-arrangement-target="item" data-id="<%= book.id %>">
+  <span class="btn btn--link arrangement__handle txt-small">
+    <%= image_tag "handle.svg", aria: { hidden: true }, size: 24 %>
+    <span class="for-screen-reader">Move <%= book.title %></span>
+  </span>
+
+  <div class="flex flex-column gap-half">
+    <div class="flex-inline position-relative center">
+      <% if book.cover.attached? %>
+        <%= image_tag book.cover, alt: "Book cover", class: "book__cover" %>
+      <% else %>
+        <span class="book__cover-wrapper">
+          <%= image_tag "empty-cover.png", alt: "Book cover", class: "book__cover margin-block-none center" %>
+          <span class="book__title overflow-line-clamp pad txt-align-start txt-tight-lines" style="--lines: 6" aria-hidden="true"><%= book.title %></span>
+        </span>
+      <% end %>
+
+      <% unless book.published? %>
+        <span class="library__badge txt-small">Draft</span>
+      <% end %>
+    </div>
+
+    <h2 class="margin-none flex flex-column txt-normal txt-tight-lines txt-medium--responsive">
+      <strong><%= book.title %></strong>
+      <span class="overflow-line-clamp"><%= book.author %></span>
+    </h2>
+  </div>
+</figure>

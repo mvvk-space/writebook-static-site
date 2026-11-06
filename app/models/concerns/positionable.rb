@@ -20,6 +20,10 @@ module Positionable
         send(parent)
       end
 
+      define_method :positioning_lock do |&block|
+        positioning_parent.with_lock(&block)
+      end
+
       define_method :all_positioned_siblings do
         positioning_parent.send(association).send(filter).positioned
       end
@@ -28,7 +32,21 @@ module Positionable
         all_positioned_siblings.excluding(self)
       end
 
-      private :positioning_parent, :all_positioned_siblings, :other_positioned_siblings
+      private :positioning_parent, :positioning_lock, :all_positioned_siblings, :other_positioned_siblings
+    end
+
+    def positioned_globally(lock:)
+      define_method :positioning_lock, &lock
+
+      define_method :all_positioned_siblings do
+        self.class.positioned
+      end
+
+      define_method :other_positioned_siblings do
+        all_positioned_siblings.excluding(self)
+      end
+
+      private :positioning_lock, :all_positioned_siblings, :other_positioned_siblings
     end
   end
 
@@ -112,6 +130,6 @@ module Positionable
     end
 
     def with_positioning_lock(&block)
-      positioning_parent.with_lock &block
+      positioning_lock(&block)
     end
 end

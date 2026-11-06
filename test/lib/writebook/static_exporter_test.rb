@@ -29,6 +29,16 @@ class Writebook::StaticExporterTest < ActiveSupport::TestCase
     assert_equal book.leaves.active.count, result.leaves
   end
 
+  test "library index keeps the manual book order" do
+    books(:manual).update!(published: true, position_score: 0)
+
+    Writebook::StaticExporter.new(@dir, host: "example.com").call
+
+    html = @dir.join("index.html").read
+    assert_operator html.index("Manual"), :<, html.index("Handbook"),
+      "expected the exported library to follow the manual book order"
+  end
+
   test "copies compiled assets and root static files" do
     Writebook::StaticExporter.new(@dir, host: "example.com").call
 

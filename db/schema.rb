@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_31_120000) do
+ActiveRecord::Schema[8.0].define(version: 2026_11_06_120000) do
   create_table "accesses", force: :cascade do |t|
     t.integer "user_id", null: false
     t.integer "book_id", null: false
@@ -83,6 +83,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_31_120000) do
     t.string "slug", null: false
     t.boolean "everyone_access", default: true, null: false
     t.string "theme", default: "blue", null: false
+    t.float "position_score", null: false
+    t.index ["position_score", "id"], name: "index_books_on_position_score_and_id"
     t.index ["published"], name: "index_books_on_published"
   end
 

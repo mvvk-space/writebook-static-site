@@ -12,6 +12,7 @@ This is a fork of [basecamp/writebook](https://github.com/basecamp/writebook) th
 - The static-site-generator fork feature: renders the public library — the menu of books, every book's table of contents, and every leaf — to a self-contained static HTML directory. All CSS/JS assets and image binaries (covers, in-body uploads, ActiveStorage pictures) are copied in.
 - Markdown and EPUB exports: one flat markdown directory per book, or one standards-based `.epub` e-book per book with chapters, a table of contents, the cover, and images embedded.
 - Print and PDF: a print-optimised page for every book (print it from the browser) and one print-ready PDF per book from the export admin page or the command line.
+- Administrators can reorder the library, and that manual order carries into the library, the static export, and the other export surfaces.
 - `AGENTS.md`, `CONTRIBUTING.md`, and upstream docs (MIT licensed)
 
 ## Quick start

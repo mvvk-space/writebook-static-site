@@ -155,6 +155,48 @@ class BooksControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?]", book_share_path(books(:handbook))
   end
 
+  test "index shows the reorder entry point to administrators only" do
+    sign_in :david
+
+    get root_url
+
+    assert_response :success
+    assert_select "a[href=?]", books_order_path
+
+    sign_in :kevin
+
+    get root_url
+
+    assert_response :success
+    assert_select "a[href=?]", books_order_path, count: 0
+  end
+
+  test "index shows published books in manual order" do
+    books(:handbook).update!(published: true)
+    books(:manual).update!(published: true, position_score: 0)
+    sign_out
+
+    get root_url
+
+    assert_response :success
+    assert_equal [ "Manual", "Handbook" ], css_select("figure.library__book h2 strong").map(&:text)
+  end
+
+  test "reordering books changes the cached index order" do
+    with_fragment_caching do
+      sign_in :david
+
+      get root_url
+      assert_equal [ "Handbook", "Manual" ], css_select("figure.library__book h2 strong").map(&:text)
+
+      post books_moves_url, params: { id: [ books(:manual).id ], position: 0 }
+      assert_response :no_content
+
+      get root_url
+      assert_equal [ "Manual", "Handbook" ], css_select("figure.library__book h2 strong").map(&:text)
+    end
+  end
+
   private
     def with_fragment_caching
       perform_caching, cache_store = ActionController::Base.perform_caching, ActionController::Base.cache_store

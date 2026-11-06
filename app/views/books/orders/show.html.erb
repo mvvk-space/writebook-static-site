@@ -1,0 +1,49 @@
+<% content_for(:title) { "Order the library" } %>
+<% @layout_class = "books" %>
+
+<% content_for :header do %>
+  <nav>
+    <%= link_to root_path, class: "btn" do %>
+      <%= image_tag "arrow-left.svg", aria: { hidden: true }, size: 24 %>
+      <span class="for-screen-reader">Go back</span>
+    <% end %>
+
+    <div class="breadcrumbs">
+      <%= render "books/index_link" %>
+      <span class="flex-item-no-shrink">▸</span>
+      <strong>Order the library</strong>
+    </div>
+
+    <%= link_to root_path, class: "btn" do %>
+      <%= image_tag "check.svg", aria: { hidden: true }, size: 24 %>
+      <span>Done</span>
+    <% end %>
+  </nav>
+<% end %>
+
+<%= arrangement_tag class: "order-library" do %>
+  <div class="panel borderless center pad fill-shade flex flex-column margin-block gap">
+    <h1 class="txt-large--responsive">Order the library</h1>
+
+    <p class="txt-medium--responsive margin-block-none">
+      Drag the plates into place, or focus the list and use the keyboard: select
+      with the arrow keys, hold Shift to extend the selection, press Space to
+      move, Enter to apply, and Escape to cancel.
+    </p>
+
+    <label class="btn arrange-mode__button txt-medium">
+      <input type="checkbox" name="arrange-mode" id="arrange-mode" data-action="arrangement#setArrangeMode">
+      <%= image_tag "rearrange.svg", aria: { hidden: true }, size: 24 %>
+      <span class="for-screen-reader">Rearrange books</span>
+    </label>
+  </div>
+
+  <div class="position-relative">
+    <menu class="library arrangement__container margin-none" tabindex="0" data-arrangement-target="container list" data-action="<%= arrangement_actions %>">
+      <%= render partial: "books/orderable_book", collection: @books, as: :book %>
+    </menu>
+
+    <div data-arrangement-target="layer" class="library"></div>
+    <div data-arrangement-target="dragImage" class="arrangement-drag-image"></div>
+  </div>
+<% end %>

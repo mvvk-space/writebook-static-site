@@ -1,0 +1,37 @@
+/* Hallmark · genre: editorial · theme: Newsprint · design-system: design.md
+ * The administrator's ordering page reuses the library grid and the shared
+ * arrangement controller. Only the handle and the draft marker are new.
+ */
+.order-library .library__book {
+  position: relative;
+}
+
+.order-library .arrangement__handle {
+  display: none;
+  inset: var(--space-xs) auto auto var(--space-xs);
+  position: absolute;
+  z-index: var(--z-base);
+}
+
+.order-library:has(#arrange-mode:checked) {
+  user-select: none;
+
+  .arrangement__handle {
+    display: flex;
+  }
+
+  .library__book {
+    transition: none;
+  }
+}
+
+.library__badge {
+  background-color: var(--color-ink);
+  border-radius: var(--radius-input);
+  color: var(--color-paper);
+  inset: var(--space-xs) var(--space-xs) auto auto;
+  letter-spacing: 0.08em;
+  padding-inline: var(--space-xs);
+  position: absolute;
+  text-transform: uppercase;
+}
