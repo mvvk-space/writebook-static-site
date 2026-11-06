@@ -1,4 +1,4 @@
-<% content_for(:title) { @result.format == "markdown" ? "Markdown export ready" : (@result.format == "epub" ? "EPUB export ready" : "Static site ready") } %>
+<% content_for(:title) { @result.format == "markdown" ? "Markdown export ready" : (@result.format == "epub" ? "EPUB export ready" : (@result.format == "pdf" ? "PDF export ready" : "Static site ready")) } %>
 
 <% content_for :header do %>
   <nav>
@@ -19,7 +19,7 @@
 
 <div class="panel borderless center pad fill-shade flex flex-column margin-block gap">
   <h1 class="txt-large--responsive">
-    <%= @result.format == "markdown" ? "Your markdown export is ready" : (@result.format == "epub" ? "Your EPUB export is ready" : "Your static site is ready") %>
+    <%= @result.format == "markdown" ? "Your markdown export is ready" : (@result.format == "epub" ? "Your EPUB export is ready" : (@result.format == "pdf" ? "Your PDF export is ready" : "Your static site is ready")) %>
   </h1>
 
   <p class="txt-medium--responsive">
@@ -55,6 +55,12 @@
       its pages as chapters, a linked table of contents, and every cover and image
       embedded. Open the files in Apple Books, Calibre, Kobo, or any other e-reader.
     </p>
+  <% elsif @result.format == "pdf" %>
+    <p class="txt-medium--responsive">
+      A PDF export: each book is a print-ready document with its title page, table
+      of contents, and every page in reading order. Open it in any PDF reader, send
+      it to a printer, or archive it as-is.
+    </p>
   <% end %>
 
   <% if @result.resource_failures.to_i.positive? %>
@@ -66,7 +72,21 @@
   <% end %>
 
   <div class="flex align-center justify-center gap">
-    <% if @result.format == "epub" && @result.book_id.blank? %>
+    <% if @result.format == "pdf" && @result.book_id.blank? %>
+      <div class="flex flex-column align-center gap">
+        <% Book.where(id: @result.exported_books.to_a).ordered.each do |book| %>
+          <%= link_to static_export_download_path(book_id: book.id, export_format: "pdf"), class: "btn txt-medium", data: { turbo: false } do %>
+            <%= image_tag "download.svg", aria: { hidden: true }, size: 24 %>
+            <span><%= book.title %> — .pdf</span>
+          <% end %>
+        <% end %>
+      </div>
+    <% elsif @result.format == "pdf" %>
+      <%= link_to static_export_download_path(book_id: @result.book_id, export_format: "pdf"), class: "btn btn--reversed txt-medium", data: { turbo: false } do %>
+        <%= image_tag "download.svg", aria: { hidden: true }, size: 24 %>
+        <span>Download .pdf</span>
+      <% end %>
+    <% elsif @result.format == "epub" && @result.book_id.blank? %>
       <div class="flex flex-column align-center gap">
         <% Book.where(id: @result.exported_books.to_a).ordered.each do |book| %>
           <%= link_to static_export_download_path(book_id: book.id, export_format: "epub"), class: "btn txt-medium", data: { turbo: false } do %>
@@ -124,6 +144,8 @@
       <p class="margin-block-none txt-subtle">Open the files in any text editor or markdown viewer, or read them rendered on GitHub.</p>
     <% elsif @result.format == "epub" %>
       <p class="margin-block-none txt-subtle">Open the downloaded <code>.epub</code> files in Apple Books, Calibre, Kobo, or any other e-reader.</p>
+    <% elsif @result.format == "pdf" %>
+      <p class="margin-block-none txt-subtle">Open the downloaded <code>.pdf</code> files in any PDF reader, or print them directly.</p>
     <% else %>
       <pre class="margin-block-none"><code>cd <%= @output_dir %>
 python3 -m http.server 8080</code></pre>
@@ -146,6 +168,11 @@ python3 -m http.server 8080</code></pre>
         Kobo, or phone, import it into an e-reader library, or attach it to an email.
         No server or app is needed to read it.
       </p>
+    <% elsif @result.format == "pdf" %>
+      <p class="margin-block-none">
+        The <code>.pdf</code> files are self-contained: send one to a printer, attach
+        it to an email, or file it away as a permanent, paginated copy of the book.
+      </p>
     <% else %>
       <p class="margin-block-none">
         Copy the <em>contents</em> of that directory to any static host — Netlify,
@@ -162,7 +189,8 @@ python3 -m http.server 8080</code></pre>
       export without holding a web request open, run
       <code>bin/rails static:generate STATIC_ALL=1</code><% if @result.format == "markdown" %> (or
       <code>bin/rails static:markdown STATIC_ALL=1</code> for markdown)<% elsif @result.format == "epub" %> (or
-      <code>bin/rails static:epub STATIC_ALL=1</code> for EPUB)<% end %>
+      <code>bin/rails static:epub STATIC_ALL=1</code> for EPUB)<% elsif @result.format == "pdf" %> (or
+      <code>bin/rails static:pdf STATIC_ALL=1</code> for PDF)<% end %>
       from the server shell — it leaves your live database untouched.
     </p>
   </div>

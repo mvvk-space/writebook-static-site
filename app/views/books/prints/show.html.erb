@@ -1,0 +1,49 @@
+<% content_for(:title) { "Print — #{@book.title}" } %>
+
+<div class="print-actions no-print" data-controller="print">
+  <%= link_to book_slug_path(@book), class: "btn" do %>
+    <%= image_tag "arrow-left.svg", aria: { hidden: true }, size: 24 %>
+    <span>Back to book</span>
+  <% end %>
+
+  <button type="button" class="btn btn--reversed" data-action="print#print">
+    <%= image_tag "file-pdf.svg", aria: { hidden: true }, size: 24 %>
+    <span>Print or save as PDF</span>
+  </button>
+</div>
+
+<article class="print-book">
+  <header class="print-cover">
+    <% if @book.cover.attached? %>
+      <div class="print-cover__image">
+        <%= image_tag @book.cover, alt: "Cover for #{@book.title}" %>
+      </div>
+    <% end %>
+
+    <h1 class="print-cover__title"><%= @book.title %></h1>
+    <% if @book.subtitle.present? %>
+      <p class="print-cover__subtitle"><%= @book.subtitle %></p>
+    <% end %>
+    <% if @book.author.present? %>
+      <p class="print-cover__author"><%= @book.author %></p>
+    <% end %>
+
+    <p class="print-cover__colophon">Made with Writebook</p>
+  </header>
+
+  <nav class="print-toc" aria-label="Contents">
+    <h2>Contents</h2>
+    <ol>
+      <% @leaves.each do |leaf| %>
+        <li><a href="#<%= dom_id(leaf) %>"><%= leaf.title %></a></li>
+      <% end %>
+    </ol>
+  </nav>
+
+  <% @leaves.each do |leaf| %>
+    <section id="<%= dom_id(leaf) %>" class="print-leaf print-leaf--<%= leaf.leafable_name %>">
+      <h2 class="print-leaf__title"><%= leaf.title %></h2>
+      <%= render "books/prints/leaf", leaf: leaf %>
+    </section>
+  <% end %>
+</article>

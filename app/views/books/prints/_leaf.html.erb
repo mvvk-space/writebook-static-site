@@ -1,0 +1,21 @@
+<% if leaf.page? %>
+  <div class="page--page page__body">
+    <%= sanitize_content leaf.page.body.to_html %>
+  </div>
+<% elsif leaf.section? %>
+  <div class="page--section page__body">
+    <%= simple_format leaf.section.body %>
+  </div>
+<% elsif leaf.picture? %>
+  <figure class="page--picture">
+    <% if leaf.picture.image.attached? %>
+      <%= image_tag leaf.picture.large_image, alt: leaf.title %>
+    <% else %>
+      <%= image_tag "default-picture.webp", alt: "No image uploaded" %>
+    <% end %>
+
+    <% if leaf.picture.caption.present? %>
+      <figcaption><%= simple_format leaf.picture.caption %></figcaption>
+    <% end %>
+  </figure>
+<% end %>

@@ -17,6 +17,11 @@
       <span class="for-screen-reader">Enter fullscreen</span>
     </button>
 
+    <%= link_to book_print_path(book), class: "btn" do %>
+      <%= image_tag "file-pdf.svg", aria: { hidden: true }, size: 24 %>
+      <span class="for-screen-reader">Print or save as PDF</span>
+    <% end %>
+
     <%= render "books/searches/search", book: @book %>
   <% end %>
 <% end %>

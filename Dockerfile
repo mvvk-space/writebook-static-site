@@ -53,9 +53,10 @@ RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
 # Final stage for app image
 FROM base
 
-# Install packages needed for deployment
+# Install packages needed for deployment. Chromium is the PDF renderer: the
+# export prints the book's print page headlessly (see Writebook::PdfExporter).
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y curl libjemalloc2 libsqlite3-0 libvips redis && \
+    apt-get install --no-install-recommends -y curl libjemalloc2 libsqlite3-0 libvips redis chromium && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # Copy built artifacts: gems, application

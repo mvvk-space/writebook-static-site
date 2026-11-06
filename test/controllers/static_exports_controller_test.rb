@@ -399,6 +399,63 @@ class StaticExportsControllerTest < ActionDispatch::IntegrationTest
                  response.headers["Content-Disposition"].to_s
   end
 
+  test "admin show offers the PDF export format" do
+    sign_in :david
+
+    get static_export_url
+    assert_response :ok
+    assert_match %(value="pdf"), @response.body
+    assert_match "PDF", @response.body
+  end
+
+  test "admin create with export_format=pdf writes one PDF per book and reports it" do
+    skip "Chromium is not available" unless Writebook::PdfExporter.available?
+
+    sign_in :david
+
+    post static_export_url, params: { export_format: "pdf" }
+    assert_redirected_to static_export_result_url
+    follow_redirect!
+    assert_response :ok
+
+    dir = static_dir
+    book = books(:handbook)
+    pdf = dir.join("#{book.slug}.pdf")
+    assert File.exist?(pdf), "expected the PDF export"
+    assert_equal "%PDF", File.binread(pdf, 4)
+
+    assert_match "Your PDF export is ready", @response.body
+    assert_match book.title, @response.body
+    assert_match %r{/static_export/download\?book_id=#{book.id}&amp;export_format=pdf}, @response.body
+  end
+
+  test "admin download with export_format=pdf sends the book's PDF" do
+    skip "Chromium is not available" unless Writebook::PdfExporter.available?
+
+    sign_in :david
+    books(:handbook).update!(published: true)
+
+    get static_export_download_path(book_id: books(:handbook).id, export_format: "pdf")
+    assert_response :ok
+    assert_match %r{application/pdf}, response.content_type.to_s
+    assert_match "writebook-#{books(:handbook).slug}.pdf",
+                 response.headers["Content-Disposition"].to_s
+    assert_equal "%PDF", response.body.byteslice(0, 4)
+  end
+
+  test "admin download with export_format=pdf and no book sends the single PDF" do
+    skip "Chromium is not available" unless Writebook::PdfExporter.available?
+
+    sign_in :david
+    books(:handbook).update!(published: true)
+
+    get static_export_download_url(export_format: "pdf")
+    assert_response :ok
+    assert_match %r{application/pdf}, response.content_type.to_s
+    assert_match "writebook-#{books(:handbook).slug}.pdf",
+                 response.headers["Content-Disposition"].to_s
+  end
+
   test "an unknown export_format falls back to the html export" do
     sign_in :david
 

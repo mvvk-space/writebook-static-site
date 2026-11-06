@@ -51,4 +51,22 @@ namespace :static do
       Writebook::StaticExporter.new(dir, verbose: true, format: "epub").call
     end
   end
+
+  desc "Generate one print-ready PDF per published book into DIR (default: tmp/static-site). " \
+       "Each PDF carries a title page, a table of contents, and every page in reading " \
+       "order. Requires Chromium (set CHROMIUM_PATH if it isn't on PATH). " \
+       "STATIC_ALL=1 to include unpublished books."
+  task :pdf, [ :dir ] => :environment do |_task, args|
+    dir = args[:dir] || "tmp/static-site"
+
+    if ENV["STATIC_ALL"] == "1"
+      Book.transaction do
+        Book.where(published: [ false, nil ]).update_all(published: true)
+        Writebook::StaticExporter.new(dir, verbose: true, format: "pdf").call
+        raise ActiveRecord::Rollback
+      end
+    else
+      Writebook::StaticExporter.new(dir, verbose: true, format: "pdf").call
+    end
+  end
 end

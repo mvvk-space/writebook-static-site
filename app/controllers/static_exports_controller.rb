@@ -27,7 +27,8 @@ class StaticExportsController < ApplicationController
   #     include unpublished books.
   #
   # Pass export_format=markdown to write the markdown-only export instead of
-  # the full HTML site (see Writebook::StaticExporter).
+  # the full HTML site (see Writebook::StaticExporter). epub and pdf write one
+  # file per book instead of a site tree.
   #
   # Synchronous -- a published-only export takes seconds; operators with very
   # large libraries should use the rake task instead (noted on the landing page)
@@ -99,7 +100,30 @@ class StaticExportsController < ApplicationController
     export_format = export_format_param
     book = Book.find_by(id: params[:book_id].presence)
     ensure_static_site_generated(book: book, format: export_format)
-    if export_format == "epub"
+    if export_format == "pdf"
+      if book
+        filename = exported_book_pdf(book)
+        path = static_dir.join(filename)
+        unless path.exist?
+          generate(book: book, format: export_format)
+          filename = exported_book_pdf(book)
+          path = static_dir.join(filename)
+        end
+        send_file path, filename: "writebook-#{book.slug}.pdf",
+                  type: "application/pdf", disposition: "attachment"
+      else
+        pdfs = exported_pdfs
+        if pdfs.empty?
+          head :not_found
+        elsif pdfs.one?
+          send_file pdfs.first, filename: "writebook-#{File.basename(pdfs.first)}",
+                    type: "application/pdf", disposition: "attachment"
+        else
+          send_file zip_pdfs(pdfs), filename: "writebook-pdf.zip",
+                    type: "application/zip", disposition: "attachment"
+        end
+      end
+    elsif export_format == "epub"
       if book
         filename = exported_book_epub(book)
         path = static_dir.join(filename)
@@ -231,6 +255,7 @@ class StaticExportsController < ApplicationController
       sentinel = case format
       when "markdown" then "index.md"
       when "epub" then "_book_epubs.json"
+      when "pdf" then "_book_pdfs.json"
       else "index.html"
       end
 
@@ -270,14 +295,37 @@ class StaticExportsController < ApplicationController
       map[book.id.to_s].presence || "#{book.slug}.epub"
     end
 
+    def exported_book_pdf(book)
+      map_file = static_dir.join("_book_pdfs.json")
+      map = map_file.exist? ? JSON.parse(map_file.read) : {}
+      map[book.id.to_s].presence || "#{book.slug}.pdf"
+    end
+
     def exported_epubs
       Dir.glob(static_dir.join("*.epub").to_s).sort
+    end
+
+    def exported_pdfs
+      Dir.glob(static_dir.join("*.pdf").to_s).sort
     end
 
     def zip_epubs(paths)
       require "zip"
 
       zip_path = unique_zip_path("writebook-epub")
+      FileUtils.rm_f(zip_path)
+
+      Zip::File.open(zip_path, create: true) do |zip|
+        paths.each { |path| zip.add(File.basename(path), path) }
+      end
+
+      zip_path
+    end
+
+    def zip_pdfs(paths)
+      require "zip"
+
+      zip_path = unique_zip_path("writebook-pdf")
       FileUtils.rm_f(zip_path)
 
       Zip::File.open(zip_path, create: true) do |zip|

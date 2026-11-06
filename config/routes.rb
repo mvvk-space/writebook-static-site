@@ -32,6 +32,7 @@ Rails.application.routes.draw do
   resources :books, except: %i[ index show ] do
     resource :publication, controller: "books/publications", only: %i[ show edit update ]
     resource :bookmark, controller: "books/bookmarks", only: :show
+    resource :print, controller: "books/prints", only: :show
 
     scope module: "books" do
       namespace :leaves do

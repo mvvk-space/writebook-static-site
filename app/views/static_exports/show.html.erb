@@ -23,9 +23,10 @@
     the full HTML site — the menu of books, every table of contents, and every page,
     with CSS, JavaScript, and images included, hostable anywhere with no Rails
     process — a markdown-only export: each book as its own flat directory of
-    plain-text .md files, images included, downloaded as one .zip per book — or an
+    plain-text .md files, images included, downloaded as one .zip per book — an
     EPUB: one standards-based e-book per book, with images and a table of contents,
-    ready for e-readers, tablets, and e-book apps.
+    ready for e-readers, tablets, and e-book apps — or a PDF: one print-ready
+    document per book, with its cover, table of contents, and every page.
   </p>
 
   <%= form_with url: static_export_path, method: :post, class: "flex flex-column align-center gap" do %>
@@ -48,6 +49,10 @@
       <label class="flex align-center gap">
         <%= radio_button_tag :export_format, "epub", false %>
         EPUB (one e-book per book, images and table of contents included)
+      </label>
+      <label class="flex align-center gap">
+        <%= radio_button_tag :export_format, "pdf", false %>
+        PDF (one print-ready document per book, cover and table of contents included)
       </label>
     </fieldset>
 
@@ -74,7 +79,8 @@
   <p class="margin-block-none">
     For a very large library, generating from the browser may time out; in that case
     run <code>bin/rails static:generate</code> (or <code>STATIC_ALL=1</code>, or
-    <code>static:markdown</code> for markdown and <code>static:epub</code> for EPUB)
+    <code>static:markdown</code> for markdown, <code>static:epub</code> for EPUB,
+    and <code>static:pdf</code> for PDF)
     from the server shell.
   </p>
 </div>

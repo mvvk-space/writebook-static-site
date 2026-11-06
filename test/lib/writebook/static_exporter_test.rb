@@ -280,4 +280,23 @@ class Writebook::StaticExporterTest < ActiveSupport::TestCase
     assert_equal 2, result.books
     assert_equal [ book.id, duplicate.id ].sort, result.exported_books.sort
   end
+
+  test "pdf export writes one PDF per book and records the filename map" do
+    skip "Chromium is not available" unless Writebook::PdfExporter.available?
+
+    book = books(:handbook)
+
+    result = Writebook::StaticExporter.new(@dir, host: "example.com", format: "pdf").call
+
+    pdf = @dir.join("#{book.slug}.pdf")
+    assert File.exist?(pdf), "expected a PDF per book"
+    assert_equal "%PDF", File.binread(pdf, 4)
+
+    map = JSON.parse(@dir.join("_book_pdfs.json").read)
+    assert_equal "#{book.slug}.pdf", map[book.id.to_s]
+
+    assert_equal "pdf", result.format
+    assert_equal [ book.id ], result.exported_books
+    assert_operator result.leaves, :>, 0
+  end
 end

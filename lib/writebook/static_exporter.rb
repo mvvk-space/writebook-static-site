@@ -32,8 +32,12 @@ module Writebook
   # each book's directory on its own, so every book downloads as its own
   # archive. No other assets or post-processing: the app's format.md routes are
   # written verbatim.
+  #
+  # With +format: "epub"+ it delegates to Writebook::EpubExporter, one e-book
+  # per book. With +format: "pdf"+ it renders each book's print page through
+  # the same session and delegates to Writebook::PdfExporter, one PDF per book.
   class StaticExporter
-    FORMATS = %w[html markdown epub].freeze
+    FORMATS = %w[html markdown epub pdf].freeze
     DEFAULT_FORMAT = "html"
 
     STATIC_ROOT_FILES = %w[favicon.svg favicon.png app-icon.png app-icon-192.png robots.txt].freeze
@@ -150,6 +154,8 @@ module Writebook
         render_markdown_library
       elsif epub?
         render_epub_library
+      elsif pdf?
+        render_pdf_library
       else
         render_library
         mirror_precompiled_assets
@@ -379,6 +385,38 @@ module Writebook
         log "Wrote #{@book_count} #{'EPUB'.pluralize(@book_count)}, #{@leaf_count} #{'chapter'.pluralize(@leaf_count)}"
       end
 
+      # One PDF per book, printed from the same page the Print button opens.
+      # That page is rendered through the integration session (logged out, with
+      # the export's temporary publication in place), then made self-contained
+      # and handed to Chromium by Writebook::PdfExporter.
+      def render_pdf_library
+        log "Rendering PDF export"
+        @exported_books = []
+        @book_pdfs = {}
+        used_names = []
+
+        books = Book.published.ordered.to_a
+        @book_count = books.size
+        @leaf_count = 0
+
+        books.each do |book|
+          filename = "#{unique_name(book.slug, used_names)}.pdf"
+          html = get("/books/#{book.id}/print")
+          result = Writebook::PdfExporter.new(book, @output_dir.join(filename), html: html,
+                                              fetcher: method(:fetch_bytes), host: @host).call
+
+          @book_pdfs[book.id.to_s] = filename
+          @exported_books << book.id
+          @leaf_count += result.leaves
+          @resource_ok += result.images
+          @resource_fail += result.failures
+          log "Book ##{book.id} #{book.title.inspect} -> #{filename}"
+        end
+
+        @output_dir.join("_book_pdfs.json").write(JSON.generate(@book_pdfs))
+        log "Wrote #{@book_count} #{'PDF'.pluralize(@book_count)}, #{@leaf_count} #{'page'.pluralize(@leaf_count)}"
+      end
+
       # The generated per-book table of contents: one bullet per file in the
       # book's directory, so a visitor can read the book a page at a time or
       # whole. Doesn't exist as a live route.
@@ -553,6 +591,8 @@ module Writebook
           "Writebook markdown export"
         elsif epub?
           "Writebook EPUB export"
+        elsif pdf?
+          "Writebook PDF export"
         else
           "Writebook static export"
         end
@@ -579,6 +619,10 @@ module Writebook
 
       def epub?
         @format == "epub"
+      end
+
+      def pdf?
+        @format == "pdf"
       end
 
       def log(message)
