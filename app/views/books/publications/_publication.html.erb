@@ -57,6 +57,11 @@
             <span class="for-screen-reader">Edit link URL</span>
           <% end %>
         <% end %>
+
+        <%= link_to book_share_path(book), class: "btn" do %>
+          <%= image_tag "download.svg", aria: { hidden: "true" }, size: 24, class: "colorize--black" %>
+          <span class="for-screen-reader">Export or share this book</span>
+        <% end %>
       </div>
     </div>
   <% end %>

@@ -148,6 +148,13 @@ class BooksControllerTest < ActionDispatch::IntegrationTest
     assert_select "link[rel=\"alternate\"][type=\"text/markdown\"][href=\"#{book_slug_path(books(:handbook), format: :md)}\"]"
   end
 
+  test "show links to the per-book share page" do
+    get book_slug_path(books(:handbook))
+
+    assert_response :success
+    assert_select "a[href=?]", book_share_path(books(:handbook))
+  end
+
   private
     def with_fragment_caching
       perform_caching, cache_store = ActionController::Base.perform_caching, ActionController::Base.cache_store

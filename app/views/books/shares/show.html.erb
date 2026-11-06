@@ -1,0 +1,133 @@
+<% content_for(:title) { "Share #{@book.title}" } %>
+
+<% content_for :header do %>
+  <nav>
+    <%= link_to book_slug_path(@book), class: "btn" do %>
+      <%= image_tag "arrow-left.svg", aria: { hidden: true }, size: 24 %>
+      <span class="for-screen-reader">Back to <%= @book.title %></span>
+    <% end %>
+
+    <div class="breadcrumbs">
+      <%= render "books/index_link" %>
+      <span class="flex-item-no-shrink">▸</span>
+      <%= link_to @book.title, book_slug_path(@book) %>
+      <span class="flex-item-no-shrink">▸</span>
+      <strong>Share &amp; export</strong>
+    </div>
+  </nav>
+<% end %>
+
+<div class="panel borderless center pad fill-shade flex flex-column margin-block gap">
+  <h1 class="txt-large--responsive">Share <%= @book.title %></h1>
+
+  <% if @book.published? %>
+    <p class="txt-medium--responsive">
+      Anyone with this link can read the whole book, no account required.
+    </p>
+
+    <label class="flex flex-column gap full-width txt-align-center">
+      <strong id="book_share_url_label" class="invite-label">Public link to this book</strong>
+      <input type="text" class="input fill-white" id="book_share_url" value="<%= @public_url %>" aria-labelledby="book_share_url_label" readonly>
+    </label>
+
+    <div class="flex align-center justify-center gap">
+      <div data-controller="dialog" class="flex-inline">
+        <%= tag.button class: "btn", data: { action: "dialog#open" } do %>
+          <%= image_tag "qr-code.svg", aria: { hidden: true }, size: 24, class: "colorize--black" %>
+          <span class="for-screen-reader">Show public link QR code</span>
+        <% end %>
+
+        <dialog class="dialog panel shadow" data-dialog-target="dialog">
+          <%= qr_code_image(@public_url) %>
+
+          <form method="dialog" class="flex justify-center">
+            <button class="btn panel__close" title="Close (esc)">
+              <%= image_tag "remove.svg", aria: { hidden: true }, size: 24 %>
+              <span class="for-screen-reader">Close</span>
+            </button>
+          </form>
+        </dialog>
+      </div>
+
+      <%= button_to_copy_to_clipboard(@public_url) do %>
+        <%= image_tag "copy-paste.svg", aria: { hidden: true }, size: 24, class: "colorize--black" %>
+        <span class="for-screen-reader">Copy public link</span>
+      <% end %>
+
+      <%= web_share_button(@public_url, "Read #{@book.title} on Writebook", "Read #{@book.title} on Writebook.") do %>
+        <%= image_tag "share.svg", aria: { hidden: true }, size: 24, class: "colorize--black" %>
+        <span class="for-screen-reader">Share public link</span>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="txt-medium--responsive">
+      This book isn't published yet, so there's no public link to share.
+      <% if @book.editable? %>
+        Publish it from its settings to give anyone a link and a QR code.
+      <% else %>
+        Ask an editor of this book to publish it first.
+      <% end %>
+    </p>
+
+    <% if @book.editable? %>
+      <%= link_to edit_book_path(@book), class: "btn btn--reversed txt-medium" do %>
+        <%= image_tag "settings.svg", aria: { hidden: true }, size: 24 %>
+        <span>Edit book settings</span>
+      <% end %>
+    <% end %>
+  <% end %>
+</div>
+
+<div class="panel borderless center pad fill-none flex flex-column gap">
+  <h2 class="txt-large--responsive">Export a copy</h2>
+
+  <p class="txt-medium--responsive">
+    Take this book with you, or hand it to someone who reads offline. Every export
+    contains the whole book in reading order.
+  </p>
+
+  <div class="flex align-center justify-center gap flex-wrap">
+    <%= link_to book_print_path(@book), class: "btn txt-medium" do %>
+      <%= image_tag "file-pdf.svg", aria: { hidden: true }, size: 24, class: "colorize--black" %>
+      <span>Print / Save as PDF</span>
+    <% end %>
+
+    <%= link_to book_slug_path(@book, format: :md), class: "btn txt-medium", data: { turbo: false } do %>
+      <%= image_tag "download.svg", aria: { hidden: true }, size: 24, class: "colorize--black" %>
+      <span>Markdown</span>
+    <% end %>
+
+    <% if Current.user&.can_administer? %>
+      <%= link_to static_export_download_path(book_id: @book.id, export_format: "epub"), class: "btn txt-medium", data: { turbo: false } do %>
+        <%= image_tag "file-epub.svg", aria: { hidden: true }, size: 24, class: "colorize--black" %>
+        <span>EPUB</span>
+      <% end %>
+
+      <%= link_to static_export_download_path(book_id: @book.id, export_format: "pdf"), class: "btn txt-medium", data: { turbo: false } do %>
+        <%= image_tag "file-pdf.svg", aria: { hidden: true }, size: 24, class: "colorize--black" %>
+        <span>PDF</span>
+      <% end %>
+
+      <%= link_to static_export_download_path(book_id: @book.id, export_format: "html"), class: "btn txt-medium", data: { turbo: false } do %>
+        <%= image_tag "file-html.svg", aria: { hidden: true }, size: 24, class: "colorize--black" %>
+        <span>HTML site</span>
+      <% end %>
+    <% end %>
+  </div>
+
+  <% unless Current.user&.can_administer? %>
+    <p class="txt-medium--responsive txt-subtle">
+      An administrator can also export this book as an EPUB, a PDF file, or a
+      standalone HTML site.
+    </p>
+  <% end %>
+</div>
+
+<% content_for :footer do %>
+  <nav class="flex align-center justify-center gap">
+    <%= link_to book_slug_path(@book), class: "btn" do %>
+      <%= image_tag "arrow-left.svg", aria: { hidden: true }, size: 24 %>
+      <span>Back to book</span>
+    <% end %>
+  </nav>
+<% end %>
